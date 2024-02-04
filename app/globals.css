@@ -1,0 +1,88 @@
+*,
+::before,
+::after {
+  box-sizing: border-box;
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+  text-size-adjust: 100%;
+  padding: 0;
+  margin: 0;
+}
+
+body[data-theme="dark"] {
+  background-color: rgb(22, 28, 36);
+}
+
+body[data-theme="light"] {
+  background-color: rgb(255, 255, 255);
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+.simplebar-content {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.simplebar-scrollbar::before {
+  background-color: rgba(99, 115, 129, 0.9) !important;
+}
+
+.react-grid-placeholder {
+  background: rgb(142, 51, 255) !important;
+  border-radius: 16px;
+}
+
+.react-resizable-handle {
+  background-image: none !important;
+}
+
+.react-grid-item > .react-resizable-handle::after {
+  display: none;
+}
+
+.apexcharts-tooltip {
+  backdrop-filter: blur(6px);
+  background-color: rgba(22, 28, 36, 0.8) !important;
+  border: 0px !important;
+  box-shadow: rgba(0, 0, 0, 0.24) 0px 0px 2px 0px,
+    rgba(0, 0, 0, 0.24) -20px 20px 40px -4px !important;
+  border-radius: 12px !important;
+  color: white !important;
+}
+
+.apexcharts-xaxistooltip {
+  backdrop-filter: blur(6px);
+  background-color: rgba(22, 28, 36, 0.8) !important;
+  border: 0px !important;
+  box-shadow: rgba(0, 0, 0, 0.24) 0px 0px 2px 0px,
+    rgba(0, 0, 0, 0.24) -20px 20px 40px -4px !important;
+  border-radius: 12px !important;
+  color: white !important;
+}
+
+.apexcharts-canvas .apexcharts-xaxistooltip::after {
+  border-bottom-color: rgba(22, 28, 36, 0.8);
+}
+
+.apexcharts-canvas .apexcharts-xaxistooltip::before {
+  border-bottom-color: rgba(22, 28, 36, 0.8);
+}
+
+.MuiTooltip-arrow {
+  color: #454f5b !important;
+}
+
+.MuiTooltip-tooltipPlacementBottom {
+  background-color: #454f5b !important;
+}
+
+.MuiTooltip-tooltipPlacementRight {
+  background-color: #454f5b !important;
+}

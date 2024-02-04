@@ -1,0 +1,90 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model password_reset_tokens {
+  email      String    @id
+  token      String
+  created_at DateTime?
+}
+
+model personal_access_tokens {
+  id             BigInt    @id @default(autoincrement())
+  tokenable_type String
+  tokenable_id   BigInt
+  name           String
+  token          String    @unique
+  abilities      String?
+  last_used_at   DateTime?
+  expires_at     DateTime?
+  created_at     DateTime?
+  updated_at     DateTime?
+}
+
+model Users {
+  id             String   @id @default(cuid())
+  email          String   @unique
+  name           String   @db.TinyText
+  surname        String?  @db.TinyText
+  password       String
+  remember_token String?
+  activate       Boolean  @default(false)
+  unread         Int?     @default(78) @db.TinyInt()
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt()
+  Keys           Keys[]   @relation("uid")
+  Trades         Trades[] @relation("uid")
+
+  @@map("users")
+}
+
+model Keys {
+  id         String   @id @default(cuid())
+  uid        String
+  api_key    String   @unique
+  secret_key String
+  title      String   @db.TinyText
+  exchange   Int      @db.TinyInt()
+  activate   Boolean  @default(true)
+  Trades     Trades[] @relation("kid")
+
+  UO Users @relation("uid", fields: [uid], references: [id])
+
+  @@map("keys")
+}
+
+model Trades {
+  id                  Int     @id @default(autoincrement())
+  uid                 String
+  kid                 String
+  exchange            Int     @db.TinyInt()
+  symbol              String  @db.TinyText
+  tags                Json?
+  rating              Int?    @db.TinyInt()
+  entry_time          String? @db.TinyText
+  average_entry_price Float?
+  exit_time           String? @db.TinyText
+  average_exit_price  Float?
+  side                Side?
+  procent             Float?
+  income              Float?
+  turnover            Float?
+  max_volume          Float?
+  volume              Float?
+  comission           Float?
+
+  UO Users @relation("uid", fields: [uid], references: [id])
+  KO Keys  @relation("kid", fields: [kid], references: [id])
+
+  @@map("trades")
+}
+
+enum Side {
+  BUY
+  SELL
+}
