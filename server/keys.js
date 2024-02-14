@@ -41,13 +41,13 @@ export async function updateTitle(id, title) {
   }
 }
 
-export async function deleteKey(id) {
+export async function deleteKey(kid) {
   try {
     await prisma.trades.deleteMany({
-      where: { kid: id },
+      where: { kid },
     });
     await prisma.keys.delete({
-      where: { id },
+      where: { id: kid },
     });
   } catch (e) {
     return null;

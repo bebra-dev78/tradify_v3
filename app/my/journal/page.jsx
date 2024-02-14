@@ -7,8 +7,8 @@ export const metadata = {
 
 export default function Journal() {
   return (
-      <Typography variant="h4" paragraph sx={{ color: "text.primary" }}>
-        Журнал
-      </Typography>
+    <Typography variant="h4" paragraph sx={{ color: "text.primary" }}>
+      Журнал
+    </Typography>
   );
 }

@@ -46,7 +46,7 @@ export default function FAQ() {
               <Typography variant="body1">Крипта</Typography>
             </AccordionSummary>
             <AccordionDetails>
-              <Typography variant="body1">крипта мрипта Бабосики</Typography>
+              <Typography variant="body1">крипта крипта бабосики</Typography>
             </AccordionDetails>
           </Accordion>
         </Grid>

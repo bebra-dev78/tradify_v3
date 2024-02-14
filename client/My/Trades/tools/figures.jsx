@@ -17,6 +17,8 @@ import Iconify from "#/utils/iconify";
 export default function Figures({ addOverlay }) {
   const [anchorEl, setAnchorEl] = useState(null);
 
+  const open = Boolean(anchorEl);
+
   return (
     <ClickAwayListener
       onClickAway={() => {
@@ -25,8 +27,8 @@ export default function Figures({ addOverlay }) {
     >
       <div>
         <ListItemButton
-          onClick={(event) => {
-            setAnchorEl(anchorEl ? null : event.currentTarget);
+          onClick={(e) => {
+            setAnchorEl(open ? null : e.currentTarget);
           }}
           sx={{
             backgroundColor: "transparent",
@@ -52,7 +54,7 @@ export default function Figures({ addOverlay }) {
           </ListItemIcon>
         </ListItemButton>
         <Popper
-          open={Boolean(anchorEl)}
+          open={open}
           anchorEl={anchorEl}
           transition
           placement="right-start"
@@ -64,7 +66,7 @@ export default function Figures({ addOverlay }) {
               },
             },
           ]}
-          sx={{ zIndex: 1, position: "absolute" }}
+          sx={{ zIndex: 9999, position: "absolute" }}
         >
           {({ TransitionProps }) => (
             <Grow
@@ -79,7 +81,7 @@ export default function Figures({ addOverlay }) {
                   <MenuItem
                     onClick={() => {
                       setAnchorEl(null);
-                      addOverlay("sampleCircle");
+                      addOverlay.current("sampleCircle");
                     }}
                   >
                     <Iconify icon="line-md:circle" />
@@ -88,7 +90,7 @@ export default function Figures({ addOverlay }) {
                   <MenuItem
                     onClick={() => {
                       setAnchorEl(null);
-                      addOverlay("sampleRect");
+                      addOverlay.current("sampleRect");
                     }}
                   >
                     <Iconify icon="line-md:square" />
@@ -97,7 +99,7 @@ export default function Figures({ addOverlay }) {
                   <MenuItem
                     onClick={() => {
                       setAnchorEl(null);
-                      addOverlay("sampleTriangle");
+                      addOverlay.current("sampleTriangle");
                     }}
                   >
                     <svg
@@ -131,7 +133,7 @@ export default function Figures({ addOverlay }) {
                   <MenuItem
                     onClick={() => {
                       setAnchorEl(null);
-                      addOverlay("sampleParallelogram");
+                      addOverlay.current("sampleParallelogram");
                     }}
                   >
                     <Iconify icon="akar-icons:parallelogram" />

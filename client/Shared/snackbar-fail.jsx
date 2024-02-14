@@ -9,13 +9,20 @@ import Iconify from "#/utils/iconify";
 export default function FailSnackbar({
   showFailSnackbar,
   setShowFailSnackbar,
+  text = (
+    <>
+      Операция не удалась
+      <br />
+      (см. Консоль браузера).
+    </>
+  ),
 }) {
   const { mode } = useMode();
 
   return (
     <Snackbar
-      anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-      key={"bottom" + "right"}
+      anchorOrigin={{ vertical: "top", horizontal: "right" }}
+      key={"top" + "right"}
       open={showFailSnackbar}
       autoHideDuration={3000}
       onClose={() => {
@@ -37,9 +44,7 @@ export default function FailSnackbar({
           setShowFailSnackbar(false);
         }}
       >
-        Операция не удалась
-        <br />
-        (см. Консоль браузера).
+        {text}
       </Alert>
     </Snackbar>
   );

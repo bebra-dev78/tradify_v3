@@ -31,14 +31,14 @@ export default function MyLayout({ children }) {
   useEffect(() => {
     axios.get("/api/bebra").then(({ data }) => {
       setUser(data);
-      setStretch(JSON.parse(localStorage.getItem("stretch")) ?? true);
-      setOpenSidebar(JSON.parse(localStorage.getItem("sidebar")) ?? true);
       if (data) {
         getKeys(data.id).then((k) => {
           setKeys(k);
         });
       }
     });
+    setOpenSidebar(JSON.parse(localStorage.getItem("sidebar")) ?? true);
+    setStretch(JSON.parse(localStorage.getItem("stretch")) ?? true);
   }, []);
 
   switch (true) {

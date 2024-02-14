@@ -81,7 +81,7 @@ export default function RootFAQ() {
                 </AccordionSummary>
                 <AccordionDetails>
                   <Typography variant="body1">
-                    крипта мрипта Бабосики
+                    крипта крипта бабосики
                   </Typography>
                 </AccordionDetails>
               </Accordion>

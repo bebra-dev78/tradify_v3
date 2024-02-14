@@ -30,7 +30,6 @@ export default function HeaderAction({ username, email }) {
       <Popover
         open={Boolean(anchorEl)}
         anchorEl={anchorEl}
-        disableScrollLock
         anchorOrigin={{
           vertical: "bottom",
         }}

@@ -125,6 +125,7 @@ export default function PopoverMenu({ username, email, setAnchorEl }) {
       <MenuItem
         sx={{ m: "8px", color: "error.main", fontWeight: 700 }}
         onClick={() => {
+          router.prefetch("/login");
           signOut({ redirect: false }).then(() => {
             setAnchorEl(null);
             NProgress.start();

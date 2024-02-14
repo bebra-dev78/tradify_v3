@@ -71,24 +71,24 @@ export default function Overview() {
                   textOverflow: "ellipsis",
                 }}
               >
-                Доброго времени суток, партнеры!
+                Доброго времени суток, партнёры! За эту неделю мы провели
+                множество изменений в основных страницах панели управления.
                 <br />
                 <br />
-                Lorem ipsum dolor sit amet consectetur adipisicing elit.
-                Adipisci nulla tempora, perspiciatis ab error aut sequi dicta
-                necessitatibus aliquam incidunt eveniet eum! Labore,
+                Главная:
+                <br />
+                <br />• Подкорректированы значения показателей прибыли, комиссии
+                и объёма за последние 24 часа.
+                <br />• Добавлен график, отображающий основные показатели сделок
+                за каждый день в течение недели и их суммарные значения.
                 <br />
                 <br />
-                necessitatibus quam. Tempore, eveniet voluptate enim quo tenetur
-                nam temporibus quod eaque distinctio incidunt quaerat quis
-                soluta itaque dolores labore laboriosam harum officiis error qui
-                quam aperiam dolor unde odio! Est libero fugiat quod eveniet
+                Сделки:
                 <br />
-                <br />
-                et! Corporis alias cum expedita quia sint nisi voluptates quam
-                provident quibusdam. Obcaecati autem earum illo voluptate quis
-                veniam et in aliquam, incidunt sit sunt.
-                <br />
+                <br />• В таблицу сделок была добавлена функция настройки
+                высоты, сама по себе таблица технически не может адаптироваться
+                по разный размер экрана и поэтому регулировать её высоту
+                необходимо самостоятельно. Также были...
               </Typography>
               <Link href="/my/news">
                 <ButtonToNews />
@@ -113,8 +113,8 @@ export default function Overview() {
               marginTop: "-120px",
               padding: "128px 40px 40px",
               color: "rgb(255, 255, 255)",
-              backgroundImage:
-                "linear-gradient(135deg, rgb(32, 101, 209) 0%, rgb(16, 57, 150) 100%)",
+              background:
+                "linear-gradient(135deg, rgb(118, 53, 220), rgb(67, 26, 158))",
             }}
           >
             <Stack

@@ -7,6 +7,11 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Side {
+  BUY
+  SELL
+}
+
 model password_reset_tokens {
   email      String    @id
   token      String
@@ -59,32 +64,28 @@ model Keys {
 }
 
 model Trades {
-  id                  Int     @id @default(autoincrement())
-  uid                 String
-  kid                 String
-  exchange            Int     @db.TinyInt()
-  symbol              String  @db.TinyText
-  tags                Json?
-  rating              Int?    @db.TinyInt()
-  entry_time          String? @db.TinyText
-  average_entry_price Float?
-  exit_time           String? @db.TinyText
-  average_exit_price  Float?
-  side                Side?
-  procent             Float?
-  income              Float?
-  turnover            Float?
-  max_volume          Float?
-  volume              Float?
-  comission           Float?
+  id              Int    @id @default(autoincrement())
+  uid             String
+  kid             String
+  exchange        Int    @db.TinyInt()
+  symbol          String @db.TinyText
+  tags            Json?
+  rating          Int?   @db.TinyInt()
+  entry_time      String @db.TinyText
+  exit_time       String @db.TinyText
+  side            Side
+  procent         String @db.TinyText
+  income          String @db.TinyText
+  turnover        String @db.TinyText
+  max_volume      String @db.TinyText
+  volume          String @db.TinyText
+  comission       String @db.TinyText
+  avg_entry_price String @db.TinyText
+  avg_exit_price  String @db.TinyText
+  duration        String @db.TinyText
 
   UO Users @relation("uid", fields: [uid], references: [id])
   KO Keys  @relation("kid", fields: [kid], references: [id])
 
   @@map("trades")
-}
-
-enum Side {
-  BUY
-  SELL
 }

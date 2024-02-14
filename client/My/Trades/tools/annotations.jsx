@@ -17,6 +17,8 @@ import Iconify from "#/utils/iconify";
 export default function Annotations({ addOverlay }) {
   const [anchorEl, setAnchorEl] = useState(null);
 
+  const open = Boolean(anchorEl);
+
   return (
     <ClickAwayListener
       onClickAway={() => {
@@ -25,8 +27,8 @@ export default function Annotations({ addOverlay }) {
     >
       <div>
         <ListItemButton
-          onClick={(event) => {
-            setAnchorEl(anchorEl ? null : event.currentTarget);
+          onClick={(e) => {
+            setAnchorEl(open ? null : e.currentTarget);
           }}
           sx={{
             backgroundColor: "transparent",
@@ -52,7 +54,7 @@ export default function Annotations({ addOverlay }) {
           </ListItemIcon>
         </ListItemButton>
         <Popper
-          open={Boolean(anchorEl)}
+          open={open}
           anchorEl={anchorEl}
           transition
           placement="right-start"
@@ -79,7 +81,7 @@ export default function Annotations({ addOverlay }) {
                   <MenuItem
                     onClick={() => {
                       setAnchorEl(null);
-                      addOverlay("simpleAnnotation");
+                      addOverlay.current("simpleAnnotation");
                     }}
                   >
                     <svg
@@ -103,7 +105,7 @@ export default function Annotations({ addOverlay }) {
                   <MenuItem
                     onClick={() => {
                       setAnchorEl(null);
-                      addOverlay("simpleTag");
+                      addOverlay.current("simpleTag");
                     }}
                   >
                     <Iconify icon="line-md:hash-small" />

@@ -2,16 +2,26 @@
 
 import Autocomplete, { autocompleteClasses } from "@mui/material/Autocomplete";
 import ClickAwayListener from "@mui/material/ClickAwayListener";
+import StarRoundedIcon from "@mui/icons-material/StarRounded";
 import CircularProgress from "@mui/material/CircularProgress";
-import useMediaQuery from "@mui/material/useMediaQuery";
+import SpeedDialAction from "@mui/material/SpeedDialAction";
+import LinearProgress from "@mui/material/LinearProgress";
+import SpeedDialIcon from "@mui/material/SpeedDialIcon";
 import MuiPagination from "@mui/material/Pagination";
+import IconButton from "@mui/material/IconButton";
 import Typography from "@mui/material/Typography";
+import SpeedDial from "@mui/material/SpeedDial";
 import TextField from "@mui/material/TextField";
 import MenuItem from "@mui/material/MenuItem";
+import Collapse from "@mui/material/Collapse";
+import Backdrop from "@mui/material/Backdrop";
+import Popover from "@mui/material/Popover";
 import Divider from "@mui/material/Divider";
+import Slider from "@mui/material/Slider";
 import Popper from "@mui/material/Popper";
 import Rating from "@mui/material/Rating";
 import Button from "@mui/material/Button";
+import Switch from "@mui/material/Switch";
 import Stack from "@mui/material/Stack";
 import Paper from "@mui/material/Paper";
 import Grow from "@mui/material/Grow";
@@ -42,15 +52,18 @@ import Image from "next/image";
 import crypto from "crypto";
 import axios from "axios";
 
+import FailSnackbar from "#/client/Shared/snackbar-fail";
 import { useMode } from "#/client/Global/theme-registry";
 import { useKeys, useUser } from "#/app/my/layout";
 import Iconify from "#/utils/iconify";
 import {
   getTrades,
+  deleteTrades,
   updateRating,
   updateTags,
-  createBybitTrades,
-  createBynanceTrades,
+  updateBybitTrades,
+  updateDefaultTrade,
+  updateBynanceTrades,
 } from "#/server/trades";
 
 import overlay from "#/public/svg/illustration_empty_content.svg";
@@ -95,132 +108,40 @@ const NoRowsOverlay = memo(function NoRowsOverlay() {
   );
 });
 
-const CustomToolbar = memo(function CustomToolbar() {
+const CustomToolbar = memo(function CustomToolbar({
+  height,
+  setHeight,
+  autoHeight,
+  setAutoHeight,
+}) {
   const { mode } = useMode();
 
-  const [anchorEl, setAnchorEl] = useState(null);
-
-  const popperRef = useRef(null);
-  const tagRef = useRef(null);
+  const dark = mode === "dark";
 
   return (
     <GridToolbarContainer
       sx={{
         padding: "14px",
-        borderColor: mode === "dark" ? "rgb(46, 50, 54)" : "rgb(241, 243, 244)",
-        backgroundColor:
-          mode === "dark" ? "rgba(145, 158, 171, 0.12)" : "rgb(244, 246, 248)",
-        borderBottom:
-          mode === "dark"
-            ? "1px dashed rgba(145, 158, 171, 0.24)"
-            : "1px dashed rgba(145, 158, 171, 0.5)",
+        borderColor: dark ? "rgb(46, 50, 54)" : "rgb(241, 243, 244)",
+        backgroundColor: dark
+          ? "rgba(145, 158, 171, 0.12)"
+          : "rgb(244, 246, 248)",
+        borderBottom: dark
+          ? "1px dashed rgba(145, 158, 171, 0.24)"
+          : "1px dashed rgba(145, 158, 171, 0.5)",
       }}
     >
       <GridToolbarColumnsButton color="info" />
       <GridToolbarFilterButton color="info" />
       <GridToolbarDensitySelector color="info" />
       <GridToolbarExport color="info" />
-      <ClickAwayListener
-        onClickAway={() => {
-          setAnchorEl(null);
-        }}
-      >
-        <div>
-          <Button
-            variant="text"
-            color="info"
-            size="small"
-            onClick={(event) => {
-              setAnchorEl(anchorEl ? null : event.currentTarget);
-            }}
-          >
-            <Iconify
-              icon="solar:add-square-outline"
-              width={20}
-              sx={{ mr: 1 }}
-            />
-            Добавить причину
-          </Button>
-          <Popper
-            open={Boolean(anchorEl)}
-            anchorEl={anchorEl}
-            ref={popperRef}
-            transition
-            placement="bottom-start"
-            modifiers={[
-              {
-                name: "offset",
-                options: {
-                  offset: [0, 8],
-                },
-              },
-            ]}
-          >
-            {({ TransitionProps }) => (
-              <Grow
-                {...TransitionProps}
-                timeout={200}
-                style={{
-                  transformOrigin: "top left",
-                }}
-              >
-                <Paper
-                  sx={{
-                    p: 2,
-                    maxWidth: "250px",
-                    boxShadow:
-                      "rgba(0, 0, 0, 0.24) 0px 0px 2px 0px, rgba(0, 0, 0, 0.24) -20px 20px 40px -4px",
-                  }}
-                >
-                  <TextField
-                    label="Причина"
-                    variant="outlined"
-                    color="secondary"
-                    size="medium"
-                    fullWidth
-                    inputRef={tagRef}
-                    sx={{ mb: 2 }}
-                  />
-                  <Button
-                    variant="contained"
-                    color="inherit"
-                    size="medium"
-                    fullWidth
-                    onClick={() => {
-                      if (!/[a-zA-Zа-яА-Я]/.test(tagRef.current.value)) {
-                        return;
-                      }
-                      setAnchorEl(null);
-                      localStorage.setItem(
-                        "tags",
-                        JSON.stringify([
-                          ...(JSON.parse(localStorage.getItem("tags")) ?? []),
-                          tagRef.current.value,
-                        ])
-                      );
-                    }}
-                    sx={{ mb: 2 }}
-                  >
-                    Добавить
-                  </Button>
-                  <Button
-                    variant="contained"
-                    color="error"
-                    size="medium"
-                    fullWidth
-                    onClick={() => {
-                      setAnchorEl(null);
-                      localStorage.setItem("tags", JSON.stringify([]));
-                    }}
-                  >
-                    Очистить всё
-                  </Button>
-                </Paper>
-              </Grow>
-            )}
-          </Popper>
-        </div>
-      </ClickAwayListener>
+      <GridToolbarAddTag />
+      <GridToolbarTableHeight
+        height={height}
+        setHeight={setHeight}
+        autoHeight={autoHeight}
+        setAutoHeight={setAutoHeight}
+      />
     </GridToolbarContainer>
   );
 });
@@ -242,13 +163,13 @@ const CustomPagination = memo(function CustomPagination(props) {
   return <GridPagination ActionsComponent={Pagination} {...props} />;
 });
 
-function Pagination({ page, onPageChange, className }) {
+const Pagination = memo(function Pagination({ page, onPageChange, className }) {
   const apiRef = useGridApiContext();
   const pageCount = useGridSelector(apiRef, gridPageCountSelector);
 
   return (
     <MuiPagination
-      color="primary"
+      color="error"
       className={className}
       count={pageCount}
       page={page + 1}
@@ -257,561 +178,698 @@ function Pagination({ page, onPageChange, className }) {
       }}
     />
   );
-}
+});
+
+const AutoHeightPopover = memo(function AutoHeightPopover() {
+  const [anchorEl, setAnchorEl] = useState(null);
+
+  return (
+    <>
+      <IconButton
+        onMouseEnter={(e) => {
+          setAnchorEl(e.currentTarget);
+        }}
+        onMouseLeave={() => {
+          setAnchorEl(null);
+        }}
+      >
+        <Iconify
+          icon="solar:question-circle-linear"
+          color="text.secondary"
+          width={20}
+        />
+      </IconButton>
+      <Popover
+        sx={{
+          pointerEvents: "none",
+        }}
+        open={Boolean(anchorEl)}
+        anchorEl={anchorEl}
+        anchorOrigin={{
+          vertical: "bottom",
+          horizontal: "left",
+        }}
+        transformOrigin={{
+          vertical: "top",
+          horizontal: "left",
+        }}
+        onClose={() => {
+          setAnchorEl(null);
+        }}
+        disableRestoreFocus
+      >
+        <Box sx={{ p: 2, width: 300 }}>
+          <Typography variant="subtitle1" paragraph>
+            Режим автоматической высоты
+          </Typography>
+          <Typography sx={{ color: "text.secondary" }}>
+            При включении этого режима высота таблицы будет автоматически{" "}
+            <b>подстраиваться</b> под общее количество сделок на странице. Этот
+            параметр почти полностью отключает <b>виртуализацию</b>, в
+            результате чего незначительно снижается оптимизация таблицы.
+          </Typography>
+        </Box>
+      </Popover>
+    </>
+  );
+});
+
+const HeightPopover = memo(function HeightPopover() {
+  const [anchorEl, setAnchorEl] = useState(null);
+
+  return (
+    <>
+      <IconButton
+        onMouseEnter={(e) => {
+          setAnchorEl(e.currentTarget);
+        }}
+        onMouseLeave={() => {
+          setAnchorEl(null);
+        }}
+      >
+        <Iconify
+          icon="solar:question-circle-linear"
+          color="text.secondary"
+          width={20}
+        />
+      </IconButton>
+      <Popover
+        sx={{
+          pointerEvents: "none",
+        }}
+        open={Boolean(anchorEl)}
+        anchorEl={anchorEl}
+        anchorOrigin={{
+          vertical: "bottom",
+          horizontal: "left",
+        }}
+        transformOrigin={{
+          vertical: "top",
+          horizontal: "left",
+        }}
+        onClose={() => {
+          setAnchorEl(null);
+        }}
+        disableRestoreFocus
+      >
+        <Box sx={{ p: 2, width: 300 }}>
+          <Typography variant="subtitle1" paragraph>
+            Режим фиксированной высоты
+          </Typography>
+          <Typography sx={{ color: "text.secondary" }}>
+            При включении этого режима высота таблицы всегда будет равна
+            выбранному <b>количеству пикселей</b>, вне зависимости от общего
+            количества сделок на странице.
+          </Typography>
+        </Box>
+      </Popover>
+    </>
+  );
+});
+
+const GridToolbarAddTag = memo(function GridToolbarAddTag() {
+  const [anchorEl, setAnchorEl] = useState(null);
+
+  const popperRef = useRef(null);
+  const tagRef = useRef(null);
+
+  const open = Boolean(anchorEl);
+
+  return (
+    <ClickAwayListener
+      onClickAway={() => {
+        setAnchorEl(null);
+      }}
+    >
+      <div>
+        <Button
+          variant="text"
+          color="info"
+          size="small"
+          onClick={(event) => {
+            setAnchorEl(open ? null : event.currentTarget);
+          }}
+        >
+          <Iconify icon="solar:add-square-outline" width={20} sx={{ mr: 1 }} />
+          Добавить причину
+        </Button>
+        <Popper
+          open={open}
+          anchorEl={anchorEl}
+          ref={popperRef}
+          transition
+          placement="bottom-start"
+          modifiers={[
+            {
+              name: "offset",
+              options: {
+                offset: [0, 8],
+              },
+            },
+          ]}
+          sx={{ zIndex: 1051, position: "absolute" }}
+        >
+          {({ TransitionProps }) => (
+            <Grow
+              {...TransitionProps}
+              timeout={200}
+              style={{
+                transformOrigin: "top left",
+              }}
+            >
+              <Paper
+                sx={{
+                  p: 2,
+                  maxWidth: "250px",
+                  boxShadow:
+                    "rgba(0, 0, 0, 0.24) 0px 0px 2px 0px, rgba(0, 0, 0, 0.24) -20px 20px 40px -4px",
+                }}
+              >
+                <TextField
+                  label="Причина"
+                  variant="outlined"
+                  color="secondary"
+                  size="medium"
+                  fullWidth
+                  inputRef={tagRef}
+                  sx={{ mb: 2 }}
+                />
+                <Button
+                  variant="contained"
+                  color="inherit"
+                  size="medium"
+                  fullWidth
+                  onClick={() => {
+                    if (!/[a-zA-Zа-яА-Я]/.test(tagRef.current.value)) {
+                      return;
+                    }
+                    setAnchorEl(null);
+                    localStorage.setItem(
+                      "tags",
+                      JSON.stringify([
+                        ...(JSON.parse(localStorage.getItem("tags")) ?? []),
+                        tagRef.current.value,
+                      ])
+                    );
+                  }}
+                  sx={{ mb: 2 }}
+                >
+                  Добавить
+                </Button>
+                <Button
+                  variant="contained"
+                  color="error"
+                  size="medium"
+                  fullWidth
+                  onClick={() => {
+                    setAnchorEl(null);
+                    localStorage.setItem("tags", JSON.stringify([]));
+                  }}
+                >
+                  Очистить всё
+                </Button>
+              </Paper>
+            </Grow>
+          )}
+        </Popper>
+      </div>
+    </ClickAwayListener>
+  );
+});
+
+const GridToolbarTableHeight = memo(function GridToolbarTableHeight({
+  height,
+  setHeight,
+  autoHeight,
+  setAutoHeight,
+}) {
+  const [openHeightTable, setOpenHeightTable] = useState(false);
+  const [activate, setActivate] = useState(autoHeight);
+  const [onChange, setOnChange] = useState(height);
+
+  return (
+    <>
+      <Button
+        variant="text"
+        color="info"
+        size="small"
+        onClick={() => {
+          setOpenHeightTable((prev) => !prev);
+        }}
+      >
+        <Iconify icon="solar:ruler-bold-duotone" sx={{ mr: 1 }} />
+        Высота таблицы
+      </Button>
+      <Collapse
+        in={openHeightTable}
+        timeout="auto"
+        unmountOnExit
+        sx={{ width: "100%" }}
+      >
+        <Box>
+          <Box sx={{ display: "flex", gap: "10px", alignItems: "center" }}>
+            <Typography
+              variant="body2"
+              sx={{
+                alignItems: "center",
+                display: "inline-flex",
+              }}
+            >
+              <AutoHeightPopover />
+              Автоматическая высота:
+            </Typography>
+            <Switch
+              checked={activate}
+              onChange={(e) => {
+                setActivate(e.target.checked);
+                localStorage.setItem("autoHeight", e.target.checked);
+              }}
+            />
+          </Box>
+          <Box sx={{ display: "flex", gap: "10px", alignItems: "center" }}>
+            <Typography
+              variant="body2"
+              sx={{
+                alignItems: "center",
+                display: "inline-flex",
+              }}
+            >
+              <HeightPopover />
+              Фиксированная высота:
+            </Typography>
+            <Slider
+              valueLabelDisplay="auto"
+              defaultValue={height}
+              disabled={activate}
+              color="secondary"
+              step={100}
+              max={2000}
+              min={300}
+              sx={{ width: "20%", mr: 3 }}
+              onChange={(e, v) => {
+                setOnChange(v);
+                localStorage.setItem("height", v);
+              }}
+              marks={[
+                {
+                  value: height,
+                  label: height,
+                },
+                {
+                  value: 2000,
+                  label: 2000,
+                },
+              ]}
+            />
+          </Box>
+          <Collapse
+            in={activate !== autoHeight || onChange !== height}
+            timeout="auto"
+            unmountOnExit
+            sx={{ width: "100%" }}
+          >
+            <Button
+              variant="text"
+              color="warning"
+              size="small"
+              onClick={() => {
+                setHeight(onChange);
+                setAutoHeight(activate);
+              }}
+            >
+              <Iconify icon="line-md:backup-restore" sx={{ mr: 1 }} />
+              Обновить таблицу
+            </Button>
+          </Collapse>
+        </Box>
+      </Collapse>
+    </>
+  );
+});
+
+const DealActions = memo(function DealActions({ apiRef, hidden }) {
+  const [showFailSnackbar, setShowFailSnackbar] = useState(false);
+  const [open, setOpen] = useState(false);
+
+  return (
+    <>
+      <Backdrop open={open} />
+      <SpeedDial
+        ariaLabel="SpeedDial"
+        sx={{ position: "fixed", bottom: 40, right: 40 }}
+        icon={
+          <SpeedDialIcon
+            openIcon={<Iconify icon="solar:widget-6-bold-duotone" />}
+          />
+        }
+        onClose={() => {
+          setOpen(false);
+        }}
+        onOpen={() => {
+          setOpen(true);
+        }}
+        FabProps={{
+          sx: {
+            backgroundColor: "rgb(81, 25, 183)",
+            boxShadow: "rgba(142, 51, 255, 0.24) 0px 8px 16px 0px",
+            "&:hover": {
+              backgroundColor: "rgb(81, 25, 183)",
+              boxShadow: "none",
+            },
+          },
+        }}
+        hidden={hidden}
+        open={open}
+      >
+        <SpeedDialAction
+          icon={
+            <Iconify
+              icon="solar:trash-bin-trash-bold"
+              sx={{ color: "error.main" }}
+            />
+          }
+          tooltipTitle="Удалить"
+          tooltipOpen
+          onClick={() => {
+            setOpen(false);
+            const ids = [];
+            apiRef.current.getSelectedRows().forEach(({ id }) => {
+              ids.push(id);
+              apiRef.current.updateRows([{ id, _action: "delete" }]);
+            });
+            deleteTrades(ids);
+          }}
+          sx={{
+            "& .MuiSpeedDialAction-staticTooltipLabel": {
+              color: "text.primary",
+            },
+          }}
+        />
+        <SpeedDialAction
+          icon={
+            <Iconify
+              icon="solar:share-circle-bold-duotone"
+              sx={{ color: "info.main" }}
+            />
+          }
+          tooltipTitle="Объединить"
+          tooltipOpen
+          onClick={() => {
+            setOpen(false);
+
+            const trades = [];
+
+            apiRef.current.getSelectedRows().forEach((trade) => {
+              trades.push(trade);
+            });
+
+            trades.sort((a, b) => a.entryTime - b.entryTime);
+            const lastTrade = trades[0];
+            const firstTrade = trades[trades.length - 1];
+
+            if (
+              trades.length < 2 ||
+              !trades.every(
+                (trade) =>
+                  trade.symbol === firstTrade.symbol &&
+                  trade.exchange === firstTrade.exchange
+              )
+            ) {
+              setShowFailSnackbar(true);
+            } else {
+              const ids = trades
+                .map((trade) => trade.id)
+                .filter((t) => t !== firstTrade.id);
+
+              ids.forEach((id) => {
+                apiRef.current.updateRows([{ id, _action: "delete" }]);
+              });
+              apiRef.current.updateRows([
+                {
+                  id: firstTrade.id,
+                  tags: trades.flatMap((trade) => trade.tags ?? []),
+                  entryTime: lastTrade.entryTime,
+                  procent: trades
+                    .reduce(
+                      (sum, trade) => sum + parseFloat(trade.procent || 0),
+                      0
+                    )
+                    .toFixed(2),
+                  income: trades
+                    .reduce(
+                      (sum, trade) => sum + parseFloat(trade.income || 0),
+                      0
+                    )
+                    .toFixed(3),
+                  turnover: trades
+                    .reduce(
+                      (sum, trade) => sum + parseFloat(trade.turnover || 0),
+                      0
+                    )
+                    .toFixed(1),
+                  maxVolume: trades
+                    .reduce(
+                      (max, trade) =>
+                        Math.max(max, parseFloat(trade.maxVolume || 0)),
+                      0
+                    )
+                    .toFixed(1),
+                  volume: trades
+                    .reduce(
+                      (sum, trade) => sum + parseFloat(trade.volume || 0),
+                      0
+                    )
+                    .toFixed(2),
+                  comission: trades
+                    .reduce(
+                      (sum, trade) => sum + parseFloat(trade.comission || 0),
+                      0
+                    )
+                    .toFixed(3),
+                  averageEntryPrice: (
+                    parseFloat(firstTrade.averageEntryPrice) +
+                    parseFloat(lastTrade.averageEntryPrice)
+                  ).toFixed(4),
+                  averageExitPrice: (
+                    parseFloat(firstTrade.averageExitPrice) +
+                    parseFloat(lastTrade.averageExitPrice)
+                  ).toFixed(4),
+                  duration: trades.reduce(
+                    (sum, trade) => sum + parseFloat(trade.duration || 0),
+                    0
+                  ),
+                },
+              ]);
+              deleteTrades(ids);
+              updateDefaultTrade(firstTrade.id, {
+                tags: trades.flatMap((trade) => trade.tags ?? []),
+                entry_time: String(lastTrade.entryTime),
+                exit_time: String(firstTrade.exitTime),
+                procent: trades
+                  .reduce(
+                    (sum, trade) => sum + parseFloat(trade.procent || 0),
+                    0
+                  )
+                  .toFixed(2),
+                income: trades
+                  .reduce(
+                    (sum, trade) => sum + parseFloat(trade.income || 0),
+                    0
+                  )
+                  .toFixed(3),
+                turnover: trades
+                  .reduce(
+                    (sum, trade) => sum + parseFloat(trade.turnover || 0),
+                    0
+                  )
+                  .toFixed(1),
+                max_volume: trades
+                  .reduce(
+                    (max, trade) =>
+                      Math.max(max, parseFloat(trade.maxVolume || 0)),
+                    0
+                  )
+                  .toFixed(1),
+                volume: trades
+                  .reduce(
+                    (sum, trade) => sum + parseFloat(trade.volume || 0),
+                    0
+                  )
+                  .toFixed(2),
+                comission: trades
+                  .reduce(
+                    (sum, trade) => sum + parseFloat(trade.comission || 0),
+                    0
+                  )
+                  .toFixed(3),
+                avg_entry_price: (
+                  parseFloat(firstTrade.averageEntryPrice) +
+                  parseFloat(lastTrade.averageEntryPrice)
+                ).toFixed(4),
+                avg_exit_price: (
+                  parseFloat(firstTrade.averageExitPrice) +
+                  parseFloat(lastTrade.averageExitPrice)
+                ).toFixed(4),
+                duration: String(
+                  trades.reduce(
+                    (sum, trade) => sum + parseFloat(trade.duration || 0),
+                    0
+                  )
+                ),
+              });
+            }
+          }}
+          sx={{
+            "& .MuiSpeedDialAction-staticTooltipLabel": {
+              color: "text.primary",
+            },
+          }}
+        />
+        <SpeedDialAction
+          icon={
+            <Iconify
+              icon="solar:star-bold-duotone"
+              sx={{ color: "warning.main" }}
+            />
+          }
+          tooltipTitle="Архивировать"
+          tooltipOpen
+          onClick={() => {
+            setOpen(false);
+            apiRef.current.getSelectedRows().forEach(({ id }) => {
+              apiRef.current.updateRows([{ id, _action: "delete" }]);
+            });
+          }}
+          sx={{
+            "& .MuiSpeedDialAction-staticTooltipLabel": {
+              color: "text.primary",
+            },
+          }}
+        />
+      </SpeedDial>
+      <FailSnackbar
+        showFailSnackbar={showFailSnackbar}
+        setShowFailSnackbar={setShowFailSnackbar}
+        text={
+          <>
+            Невозможно объединить
+            <br />
+            выбранные сделки.
+          </>
+        }
+      />
+    </>
+  );
+});
 
 export default function DataTable({ setData }) {
-  const isBigScreen = useMediaQuery("(min-width:1600px)");
   const apiRef = useGridApiRef();
   const { keys } = useKeys();
   const { mode } = useMode();
-  const { user } = useUser();
+  const {
+    user: { id },
+  } = useUser();
 
+  const [autoHeight, setAutoHeight] = useState(
+    JSON.parse(localStorage.getItem("autoHeight")) ?? false
+  );
+  const [height, setHeight] = useState(
+    JSON.parse(localStorage.getItem("height")) ?? 800
+  );
   const [loading, setLoading] = useState(false);
+  const [hidden, setHidden] = useState(true);
   const [trades, setTrades] = useState([]);
 
-  useEffect(() => {
-    if (keys.length > 0) {
-      setLoading(true);
-      getTrades(user.id).then((t) => {
-        t.sort((a, b) => parseInt(b.entry_time) - parseInt(a.entry_time));
-        setTrades(t);
-        setLoading(false);
-
-        const key1 = keys.filter((key) => key.exchange === 1)[0];
-        const key2 = keys.filter((key) => key.exchange === 2)[0];
-
-        if (t.length > 0) {
-          const startTime = Number(t[0].exit_time) + 1000;
-          const now = Date.now();
-
-          switch (true) {
-            case keys.length === 1 && key1 !== undefined:
-              console.log("Загрузка сделок от binance");
-
-              axios
-                .get("https://fapi.binance.com/fapi/v1/time")
-                .then(({ data: { serverTime } }) => {
-                  axios
-                    .get("https://fapi.binance.com/fapi/v1/allOrders", {
-                      headers: {
-                        "X-MBX-APIKEY": key1.api_key,
-                      },
-                      params: {
-                        timestamp: serverTime,
-                        recvWindow: 60000,
-                        limit: 1000,
-                        startTime: startTime,
-                        endTime: now,
-                        signature: crypto
-                          .createHmac("sha256", key1.secret_key)
-                          .update(
-                            `timestamp=${serverTime}&recvWindow=60000&limit=1000&startTime=${startTime}&endTime=${now}`
-                          )
-                          .digest("hex"),
-                      },
-                    })
-                    .then((response) => {
-                      const symbols = new Set();
-
-                      response.data.forEach((e) => {
-                        symbols.add(e.symbol);
-                      });
-
-                      const s = Array.from(symbols);
-                      console.log("symbols: ", s);
-
-                      if (s.length > 0) {
-                        createBynanceTrades(
-                          s,
-                          key1.api_key,
-                          key1.secret_key,
-                          key1.id,
-                          user.id,
-                          startTime
-                        ).then((b) => {
-                          console.log("createBynanceTrades: ", b);
-                          b.forEach((d) => {
-                            apiRef.current.updateRows(d);
-                          });
-                        });
-                      }
-                    })
-                    .catch((e) => {
-                      console.log("хуйня от binance: ", e);
-                    });
-                });
-              break;
-
-            case keys.length === 1 && key2 !== undefined:
-              console.log("Загрузка сделок от bybit");
-
-              axios
-                .get("https://api.bybit.com/v5/market/time")
-                .then(({ data: { time } }) => {
-                  axios
-                    .get(
-                      `https://api.bybit.com/v5/execution/list?category=linear&limit=100&startTime=${startTime}&endTime=${now}`,
-                      {
-                        headers: {
-                          "X-BAPI-SIGN": crypto
-                            .createHmac("sha256", key2.secret_key)
-                            .update(
-                              time +
-                                key2.api_key +
-                                60000 +
-                                `category=linear&limit=100&startTime=${startTime}&endTime=${now}`
-                            )
-                            .digest("hex"),
-                          "X-BAPI-API-KEY": key2.api_key,
-                          "X-BAPI-TIMESTAMP": time,
-                          "X-BAPI-RECV-WINDOW": 60000,
-                        },
-                      }
-                    )
-                    .then(({ data }) => {
-                      const deals = data?.result?.list;
-
-                      console.log("deals: ", deals);
-
-                      if (deals.length > 1) {
-                        const g = deals.reduce((groups, deal) => {
-                          if (!groups[deal.symbol]) {
-                            groups[deal.symbol] = [];
-                          }
-                          groups[deal.symbol].push(deal);
-                          return groups;
-                        }, {});
-
-                        for (const symbol in g) {
-                          g[symbol].sort((a, b) =>
-                            a.execTime > b.execTime
-                              ? 1
-                              : a.execTime < b.execTime
-                              ? -1
-                              : 0
-                          );
-                        }
-
-                        const s = Object.values(g).reduce(
-                          (sorted, deals) => sorted.concat(deals),
-                          []
-                        );
-
-                        const trades = [];
-                        let currentTrade = [];
-
-                        for (const deal of s) {
-                          if (
-                            (deal.closedSize === "0" &&
-                              (currentTrade.length === 0 ||
-                                currentTrade[currentTrade.length - 1]
-                                  .closedSize !== "0")) ||
-                            (currentTrade.length > 0 &&
-                              deal.symbol !== currentTrade[0].symbol)
-                          ) {
-                            if (currentTrade.length > 0) {
-                              trades.push(currentTrade);
-                              currentTrade = [];
-                            }
-                          }
-
-                          currentTrade.push(deal);
-                        }
-
-                        if (currentTrade.length > 1) {
-                          trades.push(currentTrade);
-                        }
-
-                        const data = trades.map((trade) => {
-                          const b = trade.filter((t) => t.side === "Buy");
-                          const s = trade.filter((t) => t.side === "Sell");
-                          const bt = b.reduce(
-                            (a, c) => a + parseFloat(c.execQty),
-                            0
-                          );
-                          const st = s.reduce(
-                            (a, c) => a + parseFloat(c.execQty),
-                            0
-                          );
-                          const bv = b.reduce(
-                            (a, c) => a + parseFloat(c.execValue),
-                            0
-                          );
-                          const sv = s.reduce(
-                            (a, c) => a + parseFloat(c.execValue),
-                            0
-                          );
-                          return {
-                            uid: user.id,
-                            kid: key2.id,
-                            exchange,
-                            symbol: trade[0].symbol,
-                            entry_time: String(trade[0].execTime),
-                            exit_time: String(trade[trade.length - 1].execTime),
-                            average_entry_price:
-                              b.reduce(
-                                (a, c) =>
-                                  a +
-                                  parseFloat(c.execPrice) *
-                                    parseFloat(c.execQty),
-                                0
-                              ) / bt || 0,
-                            average_exit_price:
-                              s.reduce(
-                                (a, c) =>
-                                  a +
-                                  parseFloat(c.execPrice) *
-                                    parseFloat(c.execQty),
-                                0
-                              ) / st,
-                            side: trade[0].side === "Buy" ? "BUY" : "SELL",
-                            procent: (sv / st - bv / bt) / (bv / bt) || 0,
-                            income: trade.reduce(
-                              (a, c) => a + parseFloat(c.execFee),
-                              0
-                            ),
-                            turnover: bt + st,
-                            max_volume: Math.max(
-                              bt + st,
-                              Math.max(
-                                ...b.map((b) => parseFloat(b.execQty)),
-                                ...s.map((s) => parseFloat(s.execQty))
-                              )
-                            ),
-                            volume: trade.reduce(
-                              (a, d) => a + parseFloat(d.execValue),
-                              0
-                            ),
-                            comission: Number(
-                              trade.reduce(
-                                (a, d) => a + parseFloat(d.execFee),
-                                0
-                              )
-                            ),
-                          };
-                        });
-
-                        createBybitTrades(data).then((b) => {
-                          console.log("createBybitTrades: ", b);
-                        });
-                        data.forEach((d) => {
-                          apiRef.current.updateRows(d);
-                        });
-                      }
-                    })
-                    .catch((e) => {
-                      console.log("хуйня от bybit: ", e);
-                    });
-                });
-              break;
-
-            case keys.length === 2:
-              console.log("Загрузка сделок от binance и bibyt");
-
-              Promise.all([
-                axios
-                  .get("https://fapi.binance.com/fapi/v1/time")
-                  .then(({ data: { serverTime } }) => {
-                    axios
-                      .get("https://fapi.binance.com/fapi/v1/allOrders", {
-                        headers: {
-                          "X-MBX-APIKEY": key1.api_key,
-                        },
-                        params: {
-                          timestamp: serverTime,
-                          recvWindow: 60000,
-                          limit: 1000,
-                          startTime: startTime,
-                          endTime: now,
-                          signature: crypto
-                            .createHmac("sha256", key1.secret_key)
-                            .update(
-                              `timestamp=${serverTime}&recvWindow=60000&limit=1000&startTime=${startTime}&endTime=${now}`
-                            )
-                            .digest("hex"),
-                        },
-                      })
-                      .then(({ data }) => {
-                        const symbols = new Set();
-
-                        data.forEach((e) => {
-                          symbols.add(e.symbol);
-                        });
-
-                        const s = Array.from(symbols);
-                        console.log("symbols: ", s);
-
-                        if (s.length > 0) {
-                          createBynanceTrades(
-                            s,
-                            key1.api_key,
-                            key1.secret_key,
-                            key1.id,
-                            user.id,
-                            startTime
-                          ).then((b) => {
-                            console.log("createBynanceTrades: ", b);
-                            b.forEach((d) => {
-                              apiRef.current.updateRows(d);
-                            });
-                          });
-                        }
-                      })
-                      .catch((e) => {
-                        console.log("хуйня от binance: ", e);
-                      });
-                  }),
-                axios
-                  .get("https://api.bybit.com/v5/market/time")
-                  .then(({ data: { time } }) => {
-                    axios
-                      .get(
-                        `https://api.bybit.com/v5/execution/list?category=linear&limit=100&startTime=${startTime}&endTime=${now}`,
-                        {
-                          headers: {
-                            "X-BAPI-SIGN": crypto
-                              .createHmac("sha256", key2.secret_key)
-                              .update(
-                                time +
-                                  key2.api_key +
-                                  60000 +
-                                  `category=linear&limit=100&startTime=${startTime}&endTime=${now}`
-                              )
-                              .digest("hex"),
-                            "X-BAPI-API-KEY": key2.api_key,
-                            "X-BAPI-TIMESTAMP": time,
-                            "X-BAPI-RECV-WINDOW": 60000,
-                          },
-                        }
-                      )
-                      .then(({ data }) => {
-                        const deals = data?.result?.list;
-
-                        console.log("deals: ", deals);
-
-                        if (deals.length > 0) {
-                          const g = deals.reduce((groups, deal) => {
-                            if (!groups[deal.symbol]) {
-                              groups[deal.symbol] = [];
-                            }
-                            groups[deal.symbol].push(deal);
-                            return groups;
-                          }, {});
-
-                          for (const symbol in g) {
-                            g[symbol].sort((a, b) =>
-                              a.execTime > b.execTime
-                                ? 1
-                                : a.execTime < b.execTime
-                                ? -1
-                                : 0
-                            );
-                          }
-
-                          const s = Object.values(g).reduce(
-                            (sorted, deals) => sorted.concat(deals),
-                            []
-                          );
-
-                          const trades = [];
-                          let currentTrade = [];
-
-                          for (const deal of s) {
-                            // Check conditions for grouping Bybit trades
-                            if (
-                              (deal.closedSize === "0" &&
-                                (currentTrade.length === 0 ||
-                                  currentTrade[currentTrade.length - 1]
-                                    .closedSize !== "0")) ||
-                              (currentTrade.length > 0 &&
-                                deal.symbol !== currentTrade[0].symbol)
-                            ) {
-                              if (currentTrade.length > 0) {
-                                trades.push(currentTrade);
-                                currentTrade = [];
-                              }
-                            }
-
-                            currentTrade.push(deal);
-                          }
-
-                          if (currentTrade.length > 1) {
-                            trades.push(currentTrade);
-                          }
-
-                          const data = trades.map((trade) => {
-                            const b = trade.filter((t) => t.side === "Buy");
-                            const s = trade.filter((t) => t.side === "Sell");
-                            const bt = b.reduce(
-                              (a, c) => a + parseFloat(c.execQty),
-                              0
-                            );
-                            const st = s.reduce(
-                              (a, c) => a + parseFloat(c.execQty),
-                              0
-                            );
-                            const bv = b.reduce(
-                              (a, c) => a + parseFloat(c.execValue),
-                              0
-                            );
-                            const sv = s.reduce(
-                              (a, c) => a + parseFloat(c.execValue),
-                              0
-                            );
-                            return {
-                              uid: user.id,
-                              kid: key2.id,
-                              exchange: 2,
-                              symbol: trade[0].symbol,
-                              entry_time: String(trade[0].execTime),
-                              exit_time: String(
-                                trade[trade.length - 1].execTime
-                              ),
-                              average_entry_price:
-                                b.reduce(
-                                  (a, c) =>
-                                    a +
-                                    parseFloat(c.execPrice) *
-                                      parseFloat(c.execQty),
-                                  0
-                                ) / bt,
-                              average_exit_price:
-                                s.reduce(
-                                  (a, c) =>
-                                    a +
-                                    parseFloat(c.execPrice) *
-                                      parseFloat(c.execQty),
-                                  0
-                                ) / st,
-                              side: trade[0].side === "Buy" ? "BUY" : "SELL",
-                              procent: (sv / st - bv / bt) / (bv / bt),
-                              income: trade.reduce(
-                                (a, c) => a + parseFloat(c.execFee),
-                                0
-                              ),
-                              turnover: bt + st,
-                              max_volume: Math.max(
-                                bt + st,
-                                Math.max(
-                                  ...b.map((b) => parseFloat(b.execQty)),
-                                  ...s.map((s) => parseFloat(s.execQty))
-                                )
-                              ),
-                              volume: trade.reduce(
-                                (a, d) => a + parseFloat(d.execValue),
-                                0
-                              ),
-                              comission: Number(
-                                trade.reduce(
-                                  (a, d) => a + parseFloat(d.execFee),
-                                  0
-                                )
-                              ),
-                            };
-                          });
-
-                          createBybitTrades(data).then((b) => {
-                            console.log("b: ", b);
-                          });
-                          data.forEach((d) => {
-                            apiRef.current.updateRows(d);
-                          });
-                        }
-                      })
-                      .catch((e) => {
-                        console.log("хуйня от bybit: ", e);
-                      });
-                  }),
-              ]);
-              break;
-
-            default:
-              break;
-          }
-        }
-      });
-    }
-  }, [keys]);
+  const rowId = useRef(null);
 
   const columns = useMemo(
     () => [
       {
         field: "symbol",
         headerName: "Тикер",
-        width: isBigScreen ? 200 : 150,
-        renderCell: (params) => (
+        width: 150,
+        renderCell: ({ value, row }) => (
           <MenuItem
             noWrap
             onClick={() => {
               setData({
-                symbol: params.value,
-                timestamp: params.row.entryTime,
-                exchange: params.row.exchange,
-                end: params.row.exitTime,
+                exchange: row.exchange,
+                start: row.entryTime,
+                end: row.exitTime,
+                symbol: value,
               });
               window.scrollTo(0, 0);
+              rowId.current = row.id;
             }}
             sx={{
               mt: "auto",
               mb: "auto",
+              backgroundColor:
+                rowId.current === row.id
+                  ? "rgba(0, 167, 111, 0.16)"
+                  : "transparent",
               "&:hover": {
-                backgroundColor: "rgba(0, 167, 111, 0.16)",
+                backgroundColor:
+                  rowId.current === row.id
+                    ? "rgba(0, 167, 111, 0.32)"
+                    : "rgba(255, 255, 255, 0.08)",
               },
             }}
           >
-            {params.value}
+            {value}
           </MenuItem>
         ),
       },
       {
         field: "tags",
         headerName: "Причины входа",
-        width: 400,
-        renderCell: (params) => (
+        width: 350,
+        renderCell: ({ value, row }) => (
           <Autocomplete
             multiple
             fullWidth
-            options={JSON.parse(localStorage.getItem("tags")) ?? []}
-            onChange={(event, value) => {
-              updateTags(params.row.id, value);
-            }}
-            defaultValue={params?.value ? [...params.value] : []}
             noOptionsText="Нет данных"
+            value={value ?? []}
+            options={JSON.parse(localStorage.getItem("tags")) ?? []}
+            onChange={(e, n) => {
+              apiRef.current.updateRows([{ id: row.id, tags: n }]);
+              updateTags(row.id, n);
+            }}
             renderOption={(props, option, state, ownerState) => (
-              <>
-                <Box
-                  sx={{
-                    borderRadius: "8px",
-                    margin: "5px",
-                    [`&.${autocompleteClasses.option}`]: {
-                      padding: "8px",
-                    },
-                  }}
-                  component="li"
-                  {...props}
-                >
-                  {ownerState.getOptionLabel(option)}
-                </Box>
-                <Divider />
-              </>
-            )}
-            renderInput={(params) => (
-              <TextField {...params} variant="standard" color="secondary" />
+              <Box
+                sx={{
+                  borderRadius: "8px",
+                  marginTop: "6px",
+                  [`&.${autocompleteClasses.option}`]: {
+                    padding: "8px",
+                  },
+                }}
+                component="li"
+                {...props}
+              >
+                {ownerState.getOptionLabel(option)}
+              </Box>
             )}
             ChipProps={{ variant: "soft", color: "info", size: "medium" }}
             popupIcon={<Iconify icon="solar:alt-arrow-down-bold-duotone" />}
+            renderInput={(params) => (
+              <TextField {...params} variant="standard" color="secondary" />
+            )}
           />
         ),
       },
       {
         field: "rating",
         headerName: "Оценка",
-        width: isBigScreen ? 200 : 150,
-        renderCell: (params) => (
+        width: 150,
+        renderCell: ({ value, row }) => (
           <Rating
-            defaultValue={params.value}
+            value={value}
+            icon={<StarRoundedIcon color="warning" />}
+            emptyIcon={<StarRoundedIcon color="text.secondary" />}
             onChange={(e, n) => {
-              updateRating(params.row.id, n);
+              apiRef.current.updateRows([{ id: row.id, rating: n }]);
+              updateRating(row.id, n);
             }}
           />
         ),
@@ -819,22 +877,20 @@ export default function DataTable({ setData }) {
       {
         field: "entryTime",
         headerName: "Время входа",
-        width: isBigScreen ? 200 : 150,
-        renderCell: (params) => (
+        width: 140,
+        renderCell: ({ value }) => (
           <Stack
             sx={{
               textAlign: "right",
             }}
           >
-            <Typography variant="body2" sx={{ color: "text.primary" }}>
-              {DateTime.fromMillis(params.value).toLocaleString({
-                year: "numeric",
-                month: "short",
-                day: "numeric",
-              })}
-            </Typography>
+            {DateTime.fromMillis(value).toLocaleString({
+              year: "numeric",
+              month: "short",
+              day: "numeric",
+            })}
             <Typography variant="caption" sx={{ color: "text.secondary" }}>
-              {DateTime.fromMillis(params.value).toLocaleString({
+              {DateTime.fromMillis(value).toLocaleString({
                 hour: "numeric",
                 minute: "numeric",
                 second: "numeric",
@@ -846,22 +902,20 @@ export default function DataTable({ setData }) {
       {
         field: "exitTime",
         headerName: "Время выхода",
-        width: isBigScreen ? 200 : 150,
-        renderCell: (params) => (
+        width: 140,
+        renderCell: ({ value }) => (
           <Stack
             sx={{
               textAlign: "right",
             }}
           >
-            <Typography variant="body2" sx={{ color: "text.primary" }}>
-              {DateTime.fromMillis(params.value).toLocaleString({
-                year: "numeric",
-                month: "short",
-                day: "numeric",
-              })}
-            </Typography>
+            {DateTime.fromMillis(value).toLocaleString({
+              year: "numeric",
+              month: "short",
+              day: "numeric",
+            })}
             <Typography variant="caption" sx={{ color: "text.secondary" }}>
-              {DateTime.fromMillis(params.value).toLocaleString({
+              {DateTime.fromMillis(value).toLocaleString({
                 hour: "numeric",
                 minute: "numeric",
                 second: "numeric",
@@ -873,9 +927,9 @@ export default function DataTable({ setData }) {
       {
         field: "side",
         headerName: "Сторона",
-        width: isBigScreen ? 160 : 110,
-        renderCell: (params) =>
-          params.value === "BUY" ? (
+        description: "Направление сделки",
+        renderCell: ({ value }) =>
+          value === "BUY" ? (
             <Typography
               variant="subtitle1"
               sx={{
@@ -897,227 +951,154 @@ export default function DataTable({ setData }) {
       },
       {
         field: "averageEntryPrice",
-        headerName: "Средняя цена входа",
-        width: isBigScreen ? 230 : 170,
-        renderCell: (params) => (
-          <Typography
-            variant="subtitle2"
-            sx={{
-              color: "text.primary",
-              ml: 3,
-            }}
-          >
-            $
-            {params.row.side === "BUY"
-              ? params.value
-              : params.row.averageExitPrice}
+        headerName: "Цена входа",
+        description: "Средняя цена входа",
+        width: 120,
+        renderCell: ({ value, row }) => (
+          <Typography variant="subtitle2">
+            ${row.side === "BUY" ? value : row.averageExitPrice}
           </Typography>
         ),
       },
       {
         field: "averageExitPrice",
-        headerName: "Средняя цена выхода",
-        width: isBigScreen ? 230 : 170,
-        renderCell: (params) => (
-          <Typography
-            variant="subtitle2"
-            sx={{
-              color: "text.primary",
-              ml: 3,
-            }}
-          >
-            $
-            {params.row.side === "BUY"
-              ? params.value
-              : params.row.averageEntryPrice}
+        headerName: "Цена выхода",
+        description: "Средняя цена выхода",
+        width: 130,
+        renderCell: ({ value, row }) => (
+          <Typography variant="subtitle2">
+            ${row.side === "BUY" ? value : row.averageEntryPrice}
           </Typography>
         ),
       },
       {
         field: "duration",
         headerName: "Длительность",
-        width: isBigScreen ? 250 : 200,
-        renderCell: (params) => (
-          <Typography
-            variant="body2"
-            sx={{
-              color: "text.primary",
-            }}
-          >
-            {`${Math.floor(params.value / 3600)} час. ${Math.floor(
-              (params.value % 3600) / 60
-            )} мин. ${params.value % 60} сек.`}
-          </Typography>
-        ),
+        width: 200,
+        valueFormatter: ({ value }) => {
+          const hours = Math.floor(value / 1000 / 3600);
+          const minutes = Math.floor((value / 1000 / 60) % 60);
+          const seconds = Math.floor((value / 1000) % 60);
+          return `${hours > 0 ? `${hours} час. ` : ""}${
+            minutes > 0 ? `${minutes} мин. ` : ""
+          }${seconds > 0 ? `${seconds} сек. ` : `${value % 1000} мс. `}`.trim();
+        },
       },
       {
+        type: "number",
         field: "procent",
         headerName: "Процент",
-        width: isBigScreen ? 170 : 120,
-        renderCell: (params) =>
-          params.value >= 0 ? (
+        renderCell: ({ value }) =>
+          value >= 0 ? (
             <Box
               component="span"
               sx={{
+                p: "0px 6px",
+                width: "54px",
                 height: "24px",
-                minWidth: "24px",
                 lineHeight: "0",
-                borderRadius: "6px",
                 cursor: "default",
+                fontWeight: "700",
+                borderRadius: "6px",
+                fontSize: "0.75rem",
                 alignItems: "center",
                 whiteSpace: "nowrap",
                 display: "inline-flex",
                 justifyContent: "center",
-                textTransform: "capitalize",
-                p: "0px 6px",
-                fontSize: "0.75rem",
-                fontWeight: "700",
-                transition: "all 200ms cubic-bezier(0.4, 0, 0.2, 1) 0ms",
                 color: "rgb(119, 237, 139)",
+                textTransform: "capitalize",
                 backgroundColor: "rgba(34, 197, 94, 0.16)",
-                ml: "5px",
-                mr: "auto",
+                transition: "all 200ms cubic-bezier(0.4, 0, 0.2, 1) 0ms",
               }}
             >
-              {params.value.toFixed(2)}%
+              {value}%
             </Box>
           ) : (
             <Box
               component="span"
               sx={{
+                p: "0px 6px",
+                width: "54px",
                 height: "24px",
-                minWidth: "24px",
                 lineHeight: "0",
-                borderRadius: "6px",
                 cursor: "default",
+                fontWeight: "700",
+                fontSize: "0.75rem",
+                borderRadius: "6px",
                 alignItems: "center",
                 whiteSpace: "nowrap",
                 display: "inline-flex",
                 justifyContent: "center",
-                textTransform: "capitalize",
-                p: "0px 6px",
-                fontSize: "0.75rem",
-                fontWeight: "700",
-                transition: "all 200ms cubic-bezier(0.4, 0, 0.2, 1) 0ms",
                 color: "rgb(255, 172, 130)",
+                textTransform: "capitalize",
                 backgroundColor: "rgba(255, 86, 48, 0.16)",
-                ml: "1px",
-                mr: "auto",
+                transition: "all 200ms cubic-bezier(0.4, 0, 0.2, 1) 0ms",
               }}
             >
-              {params.value.toFixed(2)}%
+              {value}%
             </Box>
           ),
       },
       {
+        type: "number",
         field: "income",
         headerName: "Доход",
-        width: isBigScreen ? 170 : 120,
-        renderCell: (params) => (
-          <Typography
-            variant="subtitle2"
-            sx={{
-              color: "text.primary",
-              ml: 3,
-            }}
-          >
-            {params.value}$
-          </Typography>
-        ),
+        width: 150,
+        valueFormatter: ({ value }) => `${value}$`,
       },
       {
+        type: "number",
         field: "profit",
         headerName: "Прибыль",
-        width: isBigScreen ? 170 : 120,
-        renderCell: (params) => (
-          <Typography
-            variant="subtitle2"
-            sx={{
-              color: "text.primary",
-              ml: 3,
-            }}
-          >
-            {(params.row.income - params.row.comission).toFixed(2)}$
-          </Typography>
-        ),
+        width: 150,
+        valueGetter: ({ row }) =>
+          `${(parseFloat(row.income) - parseFloat(row.comission)).toFixed(2)}$`,
       },
       {
+        type: "number",
         field: "turnover",
         headerName: "Оборот",
-        width: isBigScreen ? 170 : 120,
-        renderCell: (params) => (
-          <Typography
-            variant="subtitle2"
-            sx={{
-              color: "text.primary",
-              ml: 3,
-            }}
-          >
-            {params.value}
-          </Typography>
+        width: 150,
+        renderCell: ({ value }) => (
+          <Typography variant="subtitle2">{value}</Typography>
         ),
       },
       {
+        type: "number",
         field: "maxVolume",
         headerName: "Макс. объём",
-        width: isBigScreen ? 180 : 130,
-        renderCell: (params) => (
-          <Typography
-            variant="subtitle2"
-            sx={{
-              color: "text.primary",
-              ml: 3,
-            }}
-          >
-            {params.value > params.row.turnover
-              ? params.row.turnover
-              : params.value}
+        width: 150,
+        renderCell: ({ value, row }) => (
+          <Typography variant="subtitle2">
+            {value > row.turnover ? row.turnover : value}
           </Typography>
         ),
       },
       {
+        type: "number",
         field: "volume",
         headerName: "Объём ($)",
-        width: isBigScreen ? 180 : 130,
-        renderCell: (params) => (
-          <Typography
-            variant="subtitle2"
-            sx={{
-              color: "text.primary",
-              ml: 3,
-            }}
-          >
-            ${params.value}
-          </Typography>
-        ),
+        width: 150,
       },
       {
+        type: "number",
         field: "comission",
         headerName: "Комиссия",
-        width: isBigScreen ? 200 : 150,
-        renderCell: (params) => (
-          <Typography
-            variant="body2"
-            sx={{
-              color: "text.primary",
-              ml: 2,
-            }}
-          >
-            ${params.value}
-          </Typography>
-        ),
+        width: 150,
+        valueFormatter: ({ value }) => `$${value}`,
       },
       {
+        type: "number",
         field: "apikey",
         headerName: "API-ключ",
-        width: isBigScreen ? 190 : 140,
-        renderCell: (params) => (
+        width: 150,
+        renderCell: ({ value }) => (
           <Typography
             variant="subtitle2"
             noWrap
             sx={{ color: "text.disabled" }}
           >
-            {params.value}
+            {value}
           </Typography>
         ),
       },
@@ -1125,88 +1106,796 @@ export default function DataTable({ setData }) {
     []
   );
 
-  const rows = useMemo(
-    () =>
-      trades.length > 0
-        ? trades.map((trade) => ({
+  useEffect(() => {
+    if (keys.length > 0) {
+      setLoading(true);
+      getTrades(id).then((t) => {
+        setTrades(
+          t.map((trade) => ({
             id: trade.id,
+            kid: trade.kid,
+            exchange: trade.exchange,
             symbol: trade.symbol,
             tags: trade.tags,
             rating: trade.rating,
-            entryTime: Number(trade.entry_time),
-            averageEntryPrice: trade.average_entry_price?.toFixed(2),
-            exitTime: Number(trade.exit_time),
-            averageExitPrice: trade.average_exit_price?.toFixed(2),
+            entryTime: parseInt(trade.entry_time),
+            exitTime: parseInt(trade.exit_time),
             side: trade.side,
-            duration: Math.floor(
-              (Number(trade.exit_time) - Number(trade.entry_time)) / 1000
-            ),
-            procent: trade.procent * 100,
-            income: trade.income.toFixed(2),
-            turnover: trade.turnover.toFixed(1) / 2,
-            maxVolume: trade.max_volume.toFixed(1) / 2,
-            volume: trade.volume.toFixed(1) / 2,
-            comission: trade.comission.toFixed(2),
-            apikey: keys.filter((key) => key.id === trade.kid)[0].title,
-            exchange: trade.exchange,
+            procent: parseFloat(trade.procent),
+            income: trade.income,
+            turnover: parseFloat(trade.turnover),
+            maxVolume: parseFloat(trade.max_volume),
+            volume: parseFloat(trade.volume),
+            comission: trade.comission,
+            averageEntryPrice: trade.avg_entry_price,
+            averageExitPrice: trade.avg_exit_price,
+            duration: parseInt(trade.duration),
+            apikey: keys.find((key) => key.id === trade.kid).title,
           }))
-        : [],
-    [trades]
-  );
+        );
+
+        setLoading(false);
+
+        const key1 = keys.find((key) => key.exchange === 1);
+        // const key2 = keys.find((key) => key.exchange === 2);
+        const now = Date.now();
+        const startTime =
+          Number(
+            t.sort(
+              (a, b) => parseInt(b.entry_time, 10) - parseInt(a.entry_time, 10)
+            )[0]?.exit_time ?? now - 86400000
+          ) + 1000;
+
+        switch (true) {
+          case keys.length === 1 && key1 !== undefined:
+            console.log("Загрузка сделок от binance");
+
+            axios
+              .get("https://fapi.binance.com/fapi/v1/time")
+              .then(({ data: { serverTime } }) => {
+                axios
+                  .get("https://fapi.binance.com/fapi/v1/allOrders", {
+                    headers: {
+                      "X-MBX-APIKEY": key1.api_key,
+                    },
+                    params: {
+                      timestamp: serverTime,
+                      recvWindow: 60000,
+                      limit: 1000,
+                      startTime,
+                      endTime: now,
+                      signature: crypto
+                        .createHmac("sha256", key1.secret_key)
+                        .update(
+                          `timestamp=${serverTime}&recvWindow=60000&limit=1000&startTime=${startTime}&endTime=${now}`
+                        )
+                        .digest("hex"),
+                    },
+                  })
+                  .then(({ data }) => {
+                    const symbols = new Set();
+
+                    console.log("data: ", data);
+
+                    data.forEach((e) => {
+                      if (e.status !== "CANCELED") {
+                        symbols.add(e.symbol);
+                      }
+                    });
+
+                    const s = Array.from(symbols);
+                    console.log("symbols: ", s);
+
+                    if (s.length > 0) {
+                      updateBynanceTrades(
+                        id,
+                        key1.id,
+                        key1.api_key,
+                        s,
+                        key1.secret_key,
+                        startTime
+                      ).then((b) => {
+                        console.log("updateBynanceTrades: ", b);
+                        b.forEach((trade) => {
+                          apiRef.current.updateRows([
+                            {
+                              id: trade.id,
+                              kid: trade.kid,
+                              exchange: trade.exchange,
+                              symbol: trade.symbol,
+                              tags: trade.tags,
+                              rating: trade.rating,
+                              entryTime: parseInt(trade.entry_time),
+                              exitTime: parseInt(trade.exit_time),
+                              side: trade.side,
+                              procent: parseFloat(trade.procent),
+                              income: trade.income,
+                              turnover: parseFloat(trade.turnover),
+                              maxVolume: parseFloat(trade.max_volume),
+                              volume: trade.volume,
+                              comission: trade.comission,
+                              averageEntryPrice: trade.avg_entry_price,
+                              averageExitPrice: trade.avg_exit_price,
+                              duration: parseInt(trade.duration),
+                              apikey: keys.find((key) => key.id === trade.kid)
+                                .title,
+                            },
+                          ]);
+                        });
+                      });
+                    } else {
+                    }
+                  })
+                  .catch((e) => {
+                    console.log("хуйня от binance: ", e);
+                  });
+              });
+            break;
+
+          // case keys.length === 1 && key2 !== undefined:
+          //   console.log("Загрузка сделок от bybit");
+
+          //   axios
+          //     .get("https://api.bybit.com/v5/market/time")
+          //     .then(({ data: { time } }) => {
+          //       axios
+          //         .get(
+          //           `https://api.bybit.com/v5/execution/list?category=linear&limit=100&startTime=${startTime}&endTime=${now}`,
+          //           {
+          //             headers: {
+          //               "X-BAPI-SIGN": crypto
+          //                 .createHmac("sha256", key2.secret_key)
+          //                 .update(
+          //                   time +
+          //                     key2.api_key +
+          //                     60000 +
+          //                     `category=linear&limit=100&startTime=${startTime}&endTime=${now}`
+          //                 )
+          //                 .digest("hex"),
+          //               "X-BAPI-API-KEY": key2.api_key,
+          //               "X-BAPI-TIMESTAMP": time,
+          //               "X-BAPI-RECV-WINDOW": 60000,
+          //             },
+          //           }
+          //         )
+          //         .then(({ data }) => {
+          //           const deals = data?.result?.list;
+
+          //           console.log("deals: ", deals);
+
+          //           if (deals.length > 1) {
+          //             const g = deals.reduce((groups, deal) => {
+          //               if (!groups[deal.symbol]) {
+          //                 groups[deal.symbol] = [];
+          //               }
+          //               groups[deal.symbol].push(deal);
+          //               return groups;
+          //             }, {});
+
+          //             for (const symbol in g) {
+          //               g[symbol].sort((a, b) =>
+          //                 a.execTime > b.execTime
+          //                   ? 1
+          //                   : a.execTime < b.execTime
+          //                   ? -1
+          //                   : 0
+          //               );
+          //             }
+
+          //             const s = Object.values(g).reduce(
+          //               (sorted, deals) => sorted.concat(deals),
+          //               []
+          //             );
+
+          //             const trades = [];
+          //             let currentTrade = [];
+
+          //             for (const deal of s) {
+          //               if (
+          //                 (deal.closedSize === "0" &&
+          //                   (currentTrade.length === 0 ||
+          //                     currentTrade[currentTrade.length - 1]
+          //                       .closedSize !== "0")) ||
+          //                 (currentTrade.length > 0 &&
+          //                   deal.symbol !== currentTrade[0].symbol)
+          //               ) {
+          //                 if (currentTrade.length > 0) {
+          //                   trades.push(currentTrade);
+          //                   currentTrade = [];
+          //                 }
+          //               }
+
+          //               currentTrade.push(deal);
+          //             }
+
+          //             if (currentTrade.length > 1) {
+          //               trades.push(currentTrade);
+          //             }
+
+          //             updateBybitTrades(
+          //               trades.map((trade) => {
+          //                 const b = trade.filter((t) => t.side === "Buy");
+          //                 const s = trade.filter((t) => t.side === "Sell");
+          //                 const bt = b.reduce(
+          //                   (a, c) => a + parseFloat(c.execQty),
+          //                   0
+          //                 );
+          //                 const st = s.reduce(
+          //                   (a, c) => a + parseFloat(c.execQty),
+          //                   0
+          //                 );
+          //                 const bv = b.reduce(
+          //                   (a, c) => a + parseFloat(c.execValue),
+          //                   0
+          //                 );
+          //                 const sv = s.reduce(
+          //                   (a, c) => a + parseFloat(c.execValue),
+          //                   0
+          //                 );
+          //                 return {
+          //                   uid: id,
+          //                   kid: key2.id,
+          //                   exchange: 2,
+          //                   symbol: trade[0].symbol,
+          //                   entry_time: String(trade[0].execTime),
+          //                   exit_time: String(trade[trade.length - 1].execTime),
+          //                   side: trade[0].side === "Buy" ? "BUY" : "SELL",
+          //                   procent: (
+          //                     ((sv / st - bv / bt) / (bv / bt)) *
+          //                     100
+          //                   ).toFixed(2),
+          //                   income: trade
+          //                     .reduce((a, c) => a + parseFloat(c.execFee), 0)
+          //                     .toFixed(3),
+          //                   turnover: ((bt + st) / 2).toFixed(1),
+          //                   max_volume: (
+          //                     Math.max(
+          //                       bt + st,
+          //                       Math.max(
+          //                         ...b.map((b) => parseFloat(b.execQty)),
+          //                         ...s.map((s) => parseFloat(s.execQty))
+          //                       )
+          //                     ) / 2
+          //                   ).toFixed(1),
+          //                   volume: (
+          //                     trade.reduce(
+          //                       (a, d) => a + parseFloat(d.execValue),
+          //                       0
+          //                     ) / 2
+          //                   ).toFixed(2),
+          //                   comission: trade
+          //                     .reduce((a, d) => a + parseFloat(d.execFee), 0)
+          //                     .toFixed(3),
+          //                   avg_entry_price: (
+          //                     b.reduce(
+          //                       (a, c) =>
+          //                         a +
+          //                         parseFloat(c.execPrice) *
+          //                           parseFloat(c.execQty),
+          //                       0
+          //                     ) / bt
+          //                   ).toFixed(4),
+          //                   avg_exit_price: (
+          //                     s.reduce(
+          //                       (a, c) =>
+          //                         a +
+          //                         parseFloat(c.execPrice) *
+          //                           parseFloat(c.execQty),
+          //                       0
+          //                     ) / st
+          //                   ).toFixed(4),
+          //                   duration: String(
+          //                     (trade[trade.length - 1].execTime -
+          //                       trade[0].execTime) /
+          //                       1000
+          //                   ),
+          //                 };
+          //               })
+          //             ).then((b) => {
+          //               setLoading(false);
+
+          //               console.log("updateBybitTrades: ", b);
+          //               b.forEach((trade) => {
+          //                 apiRef.current.updateRows([
+          //                   {
+          //                     id: trade.id,
+          //                     kid: trade.kid,
+          //                     exchange: trade.exchange,
+          //                     symbol: trade.symbol,
+          //                     tags: trade.tags,
+          //                     rating: trade.rating,
+          //                     entryTime: parseInt(trade.entry_time),
+          //                     exitTime: parseInt(trade.exit_time),
+          //                     side: trade.side,
+          //                     procent: parseFloat(trade.procent),
+          //                     income: trade.income,
+          //                     turnover: parseFloat(trade.turnover),
+          //                     maxVolume: parseFloat(trade.max_volume),
+          //                     volume: trade.volume,
+          //                     comission: trade.comission,
+          //                     averageEntryPrice: trade.avg_entry_price,
+          //                     averageExitPrice: trade.avg_exit_price,
+          //                     duration: parseInt(trade.duration),
+          //                     apikey: keys.filter(
+          //                       (key) => key.id === trade.kid
+          //                     )[0].title,
+          //                   },
+          //                 ]);
+          //               });
+          //             });
+          //           } else {
+          //             setLoading(false);
+          //           }
+          //         })
+          //         .catch((e) => {
+          //           setLoading(false);
+          //           console.log("хуйня от bybit: ", e);
+          //         });
+          //     });
+          //   break;
+
+          // case keys.length === 2:
+          //   console.log("Загрузка сделок от binance и bibyt");
+
+          //   Promise.all([
+          //     axios
+          //       .get("https://fapi.binance.com/fapi/v1/time")
+          //       .then(({ data: { serverTime } }) => {
+          //         axios
+          //           .get("https://fapi.binance.com/fapi/v1/allOrders", {
+          //             headers: {
+          //               "X-MBX-APIKEY": key1.api_key,
+          //             },
+          //             params: {
+          //               timestamp: serverTime,
+          //               recvWindow: 60000,
+          //               limit: 1000,
+          //               startTime: startTime,
+          //               endTime: now,
+          //               signature: crypto
+          //                 .createHmac("sha256", key1.secret_key)
+          //                 .update(
+          //                   `timestamp=${serverTime}&recvWindow=60000&limit=1000&startTime=${startTime}&endTime=${now}`
+          //                 )
+          //                 .digest("hex"),
+          //             },
+          //           })
+          //           .then(({ data }) => {
+          //             const symbols = new Set();
+
+          //             data.forEach((e) => {
+          //               symbols.add(e.symbol);
+          //             });
+
+          //             const s = Array.from(symbols);
+          //             console.log("symbols: ", s);
+
+          //             if (s.length > 0) {
+          //               updateBynanceTrades(
+          //                 id,
+          //                 key1.id,
+          //                 key1.api_key,
+          //                 s,
+          //                 key1.secret_key,
+          //                 startTime
+          //               ).then((b) => {
+          //                 setLoading(false);
+
+          //                 console.log("updateBynanceTrades: ", b);
+          //                 b.forEach((trade) => {
+          //                   apiRef.current.updateRows([
+          //                     {
+          //                       id: trade.id,
+          //                       kid: trade.kid,
+          //                       exchange: trade.exchange,
+          //                       symbol: trade.symbol,
+          //                       tags: trade.tags,
+          //                       rating: trade.rating,
+          //                       entryTime: parseInt(trade.entry_time),
+          //                       exitTime: parseInt(trade.exit_time),
+          //                       side: trade.side,
+          //                       procent: parseFloat(trade.procent),
+          //                       income: trade.income,
+          //                       turnover: parseFloat(trade.turnover),
+          //                       maxVolume: parseFloat(trade.max_volume),
+          //                       volume: trade.volume,
+          //                       comission: trade.comission,
+          //                       averageEntryPrice: trade.avg_entry_price,
+          //                       averageExitPrice: trade.avg_exit_price,
+          //                       duration: parseInt(trade.duration),
+          //                       apikey: keys.filter(
+          //                         (key) => key.id === trade.kid
+          //                       )[0].title,
+          //                     },
+          //                   ]);
+          //                 });
+          //               });
+          //             } else {
+          //               setLoading(false);
+          //             }
+          //           })
+          //           .catch((e) => {
+          //             setLoading(false);
+          //             console.log("хуйня от binance: ", e);
+          //           });
+          //       }),
+          //     axios
+          //       .get("https://api.bybit.com/v5/market/time")
+          //       .then(({ data: { time } }) => {
+          //         axios
+          //           .get(
+          //             `https://api.bybit.com/v5/execution/list?category=linear&limit=100&startTime=${startTime}&endTime=${now}`,
+          //             {
+          //               headers: {
+          //                 "X-BAPI-SIGN": crypto
+          //                   .createHmac("sha256", key2.secret_key)
+          //                   .update(
+          //                     time +
+          //                       key2.api_key +
+          //                       60000 +
+          //                       `category=linear&limit=100&startTime=${startTime}&endTime=${now}`
+          //                   )
+          //                   .digest("hex"),
+          //                 "X-BAPI-API-KEY": key2.api_key,
+          //                 "X-BAPI-TIMESTAMP": time,
+          //                 "X-BAPI-RECV-WINDOW": 60000,
+          //               },
+          //             }
+          //           )
+          //           .then(({ data }) => {
+          //             const deals = data?.result?.list;
+
+          //             console.log("deals: ", deals);
+
+          //             if (deals.length > 1) {
+          //               const g = deals.reduce((groups, deal) => {
+          //                 if (!groups[deal.symbol]) {
+          //                   groups[deal.symbol] = [];
+          //                 }
+          //                 groups[deal.symbol].push(deal);
+          //                 return groups;
+          //               }, {});
+
+          //               for (const symbol in g) {
+          //                 g[symbol].sort((a, b) =>
+          //                   a.execTime > b.execTime
+          //                     ? 1
+          //                     : a.execTime < b.execTime
+          //                     ? -1
+          //                     : 0
+          //                 );
+          //               }
+
+          //               const s = Object.values(g).reduce(
+          //                 (sorted, deals) => sorted.concat(deals),
+          //                 []
+          //               );
+
+          //               const trades = [];
+          //               let currentTrade = [];
+
+          //               for (const deal of s) {
+          //                 if (
+          //                   (deal.closedSize === "0" &&
+          //                     (currentTrade.length === 0 ||
+          //                       currentTrade[currentTrade.length - 1]
+          //                         .closedSize !== "0")) ||
+          //                   (currentTrade.length > 0 &&
+          //                     deal.symbol !== currentTrade[0].symbol)
+          //                 ) {
+          //                   if (currentTrade.length > 0) {
+          //                     trades.push(currentTrade);
+          //                     currentTrade = [];
+          //                   }
+          //                 }
+
+          //                 currentTrade.push(deal);
+          //               }
+
+          //               if (currentTrade.length > 1) {
+          //                 trades.push(currentTrade);
+          //               }
+
+          //               updateBybitTrades(
+          //                 trades.map((trade) => {
+          //                   const b = trade.filter((t) => t.side === "Buy");
+          //                   const s = trade.filter((t) => t.side === "Sell");
+          //                   const bt = b.reduce(
+          //                     (a, c) => a + parseFloat(c.execQty),
+          //                     0
+          //                   );
+          //                   const st = s.reduce(
+          //                     (a, c) => a + parseFloat(c.execQty),
+          //                     0
+          //                   );
+          //                   const bv = b.reduce(
+          //                     (a, c) => a + parseFloat(c.execValue),
+          //                     0
+          //                   );
+          //                   const sv = s.reduce(
+          //                     (a, c) => a + parseFloat(c.execValue),
+          //                     0
+          //                   );
+          //                   return {
+          //                     uid: id,
+          //                     kid: key2.id,
+          //                     exchange: 2,
+          //                     symbol: trade[0].symbol,
+          //                     entry_time: String(trade[0].execTime),
+          //                     exit_time: String(
+          //                       trade[trade.length - 1].execTime
+          //                     ),
+          //                     side: trade[0].side === "Buy" ? "BUY" : "SELL",
+          //                     procent: (
+          //                       ((sv / st - bv / bt) / (bv / bt)) *
+          //                       100
+          //                     ).toFixed(2),
+          //                     income: trade
+          //                       .reduce((a, c) => a + parseFloat(c.execFee), 0)
+          //                       .toFixed(3),
+          //                     turnover: ((bt + st) / 2).toFixed(1),
+          //                     max_volume: (
+          //                       Math.max(
+          //                         bt + st,
+          //                         Math.max(
+          //                           ...b.map((b) => parseFloat(b.execQty)),
+          //                           ...s.map((s) => parseFloat(s.execQty))
+          //                         )
+          //                       ) / 2
+          //                     ).toFixed(1),
+          //                     volume: (
+          //                       trade.reduce(
+          //                         (a, d) => a + parseFloat(d.execValue),
+          //                         0
+          //                       ) / 2
+          //                     ).toFixed(2),
+          //                     comission: trade
+          //                       .reduce((a, d) => a + parseFloat(d.execFee), 0)
+          //                       .toFixed(3),
+          //                     avg_entry_price: (
+          //                       b.reduce(
+          //                         (a, c) =>
+          //                           a +
+          //                           parseFloat(c.execPrice) *
+          //                             parseFloat(c.execQty),
+          //                         0
+          //                       ) / bt
+          //                     ).toFixed(4),
+          //                     avg_exit_price: (
+          //                       s.reduce(
+          //                         (a, c) =>
+          //                           a +
+          //                           parseFloat(c.execPrice) *
+          //                             parseFloat(c.execQty),
+          //                         0
+          //                       ) / st
+          //                     ).toFixed(4),
+          //                     duration: String(
+          //                       (trade[trade.length - 1].execTime -
+          //                         trade[0].execTime) /
+          //                         1000
+          //                     ),
+          //                   };
+          //                 })
+          //               ).then((b) => {
+          //                 setLoading(false);
+          //                 console.log("updateBybitTrades: ", b);
+          //                 b.forEach((trade) => {
+          //                   apiRef.current.updateRows([
+          //                     {
+          //                       id: trade.id,
+          //                       kid: trade.kid,
+          //                       exchange: trade.exchange,
+          //                       symbol: trade.symbol,
+          //                       tags: trade.tags,
+          //                       rating: trade.rating,
+          //                       entryTime: parseInt(trade.entry_time),
+          //                       exitTime: parseInt(trade.exit_time),
+          //                       side: trade.side,
+          //                       procent: parseFloat(trade.procent),
+          //                       income: trade.income,
+          //                       turnover: parseFloat(trade.turnover),
+          //                       maxVolume: parseFloat(trade.max_volume),
+          //                       volume: trade.volume,
+          //                       comission: trade.comission,
+          //                       averageEntryPrice: trade.avg_entry_price,
+          //                       averageExitPrice: trade.avg_exit_price,
+          //                       duration: parseInt(trade.duration),
+          //                       apikey: keys.filter(
+          //                         (key) => key.id === trade.kid
+          //                       )[0].title,
+          //                     },
+          //                   ]);
+          //                 });
+          //               });
+          //             } else {
+          //               setLoading(false);
+          //             }
+          //           })
+          //           .catch((e) => {
+          //             setLoading(false);
+          //             console.log("хуйня от bybit: ", e);
+          //           });
+          //       }),
+          //   ]);
+          //   break;
+
+          default:
+            break;
+        }
+      });
+    }
+  }, [keys]);
 
   const dark = mode === "dark";
 
   return (
-    <DataGrid
-      autoHeight
-      checkboxSelection
-      disableRowSelectionOnClick
-      columns={columns}
-      rows={rows}
-      loading={loading}
-      pageSizeOptions={[10, 25, 50, 100]}
-      localeText={ruRU.components.MuiDataGrid.defaultProps.localeText}
-      slots={{
-        loadingOverlay: LoadingOverlay,
-        noRowsOverlay: NoRowsOverlay,
-        columnMenu: CustomColumnMenu,
-        toolbar: CustomToolbar,
-        pagination: CustomPagination,
-      }}
-      initialState={{
-        pagination: {
-          paginationModel: {
-            pageSize: 25,
-          },
-        },
-      }}
-      getRowHeight={() => "auto"}
-      sx={{
-        border: "none",
-        "--DataGrid-overlayHeight": "360px",
-        "&.MuiDataGrid-root--densityCompact .MuiDataGrid-cell": { py: "5px" },
-        "&.MuiDataGrid-root--densityStandard .MuiDataGrid-cell": { py: "10px" },
-        "&.MuiDataGrid-root--densityComfortable .MuiDataGrid-cell": {
-          py: "15px",
-        },
-        "& .MuiDataGrid-columnHeaders": {
-          color: "text.secondary",
-          borderColor: dark ? "rgb(46, 50, 54)" : "rgb(241, 243, 244)",
-          backgroundColor: dark
-            ? "rgba(145, 158, 171, 0.12)"
-            : "rgb(244, 246, 248)",
-        },
-        "& .MuiDataGrid-withBorderColor": {
-          borderColor: dark
-            ? "rgba(145, 158, 171, 0.12)"
-            : "rgb(244, 246, 248)",
-        },
-        "& .MuiDataGrid-columnsContainer, .MuiDataGrid-cell": {
-          borderBottom: dark
-            ? "1px dashed rgba(145, 158, 171, 0.24)"
-            : "1px dashed rgba(145, 158, 171, 0.5)",
-        },
-      }}
-    />
+    <>
+      {autoHeight ? (
+        <DataGrid
+          autoHeight
+          checkboxSelection
+          disableRowSelectionOnClick
+          getRowHeight={() => "auto"}
+          pageSizeOptions={[10, 25, 50, 100]}
+          localeText={ruRU.components.MuiDataGrid.defaultProps.localeText}
+          initialState={{
+            pagination: {
+              paginationModel: {
+                pageSize: JSON.parse(localStorage.getItem("pageSize")) ?? 25,
+              },
+            },
+            sorting: {
+              sortModel: [{ field: "entryTime", sort: "desc" }],
+            },
+          }}
+          onRowSelectionModelChange={(newRowSelectionModel) => {
+            if (newRowSelectionModel.length > 0) {
+              setHidden(false);
+            } else {
+              setHidden(true);
+            }
+          }}
+          onPaginationModelChange={({ pageSize }) => {
+            localStorage.setItem("pageSize", pageSize);
+          }}
+          slotProps={{
+            toolbar: { height, autoHeight },
+          }}
+          slots={{
+            loadingOverlay: LoadingOverlay,
+            noRowsOverlay: NoRowsOverlay,
+            columnMenu: CustomColumnMenu,
+            toolbar: (props) => (
+              <CustomToolbar
+                {...props}
+                height={height}
+                setHeight={setHeight}
+                autoHeight={autoHeight}
+                setAutoHeight={setAutoHeight}
+              />
+            ),
+            pagination: CustomPagination,
+          }}
+          columns={columns}
+          loading={loading}
+          apiRef={apiRef}
+          rows={trades}
+          sx={{
+            border: "none",
+            "--DataGrid-overlayHeight": "600px",
+            "&.MuiDataGrid-root--densityCompact .MuiDataGrid-cell": {
+              py: "5px",
+            },
+            "&.MuiDataGrid-root--densityStandard .MuiDataGrid-cell": {
+              py: "10px",
+            },
+            "&.MuiDataGrid-root--densityComfortable .MuiDataGrid-cell": {
+              py: "15px",
+            },
+            "& .MuiDataGrid-columnHeaders": {
+              color: "text.secondary",
+              borderColor: dark ? "rgb(46, 50, 54)" : "rgb(241, 243, 244)",
+              backgroundColor: dark
+                ? "rgba(145, 158, 171, 0.12)"
+                : "rgb(244, 246, 248)",
+            },
+            "& .MuiDataGrid-withBorderColor": {
+              borderColor: dark
+                ? "rgba(145, 158, 171, 0.12)"
+                : "rgb(244, 246, 248)",
+            },
+            "& .MuiDataGrid-columnsContainer, .MuiDataGrid-cell": {
+              borderBottom: dark
+                ? "1px dashed rgba(145, 158, 171, 0.24)"
+                : "1px dashed rgba(145, 158, 171, 0.5)",
+            },
+          }}
+        />
+      ) : (
+        <Box sx={{ height }}>
+          <DataGrid
+            checkboxSelection
+            disableRowSelectionOnClick
+            getRowHeight={() => "auto"}
+            pageSizeOptions={[10, 25, 50, 100]}
+            localeText={ruRU.components.MuiDataGrid.defaultProps.localeText}
+            initialState={{
+              pagination: {
+                paginationModel: {
+                  pageSize: JSON.parse(localStorage.getItem("pageSize")) ?? 25,
+                },
+              },
+              sorting: {
+                sortModel: [{ field: "entryTime", sort: "desc" }],
+              },
+            }}
+            onRowSelectionModelChange={(newRowSelectionModel) => {
+              if (newRowSelectionModel.length > 0) {
+                setHidden(false);
+              } else {
+                setHidden(true);
+              }
+            }}
+            onPaginationModelChange={({ pageSize }) => {
+              localStorage.setItem("pageSize", pageSize);
+            }}
+            slotProps={{
+              toolbar: { height, autoHeight },
+            }}
+            slots={{
+              loadingOverlay: LoadingOverlay,
+              noRowsOverlay: NoRowsOverlay,
+              columnMenu: CustomColumnMenu,
+              toolbar: (props) => (
+                <CustomToolbar
+                  {...props}
+                  height={height}
+                  setHeight={setHeight}
+                  autoHeight={autoHeight}
+                  setAutoHeight={setAutoHeight}
+                />
+              ),
+              pagination: CustomPagination,
+            }}
+            columns={columns}
+            loading={loading}
+            apiRef={apiRef}
+            rows={trades}
+            sx={{
+              border: "none",
+              "--DataGrid-overlayHeight": "600px",
+              "&.MuiDataGrid-root--densityCompact .MuiDataGrid-cell": {
+                py: "5px",
+              },
+              "&.MuiDataGrid-root--densityStandard .MuiDataGrid-cell": {
+                py: "10px",
+              },
+              "&.MuiDataGrid-root--densityComfortable .MuiDataGrid-cell": {
+                py: "15px",
+              },
+              "& .MuiDataGrid-columnHeaders": {
+                color: "text.secondary",
+                borderColor: dark ? "rgb(46, 50, 54)" : "rgb(241, 243, 244)",
+                backgroundColor: dark
+                  ? "rgba(145, 158, 171, 0.12)"
+                  : "rgb(244, 246, 248)",
+              },
+              "& .MuiDataGrid-withBorderColor": {
+                borderColor: dark
+                  ? "rgba(145, 158, 171, 0.12)"
+                  : "rgb(244, 246, 248)",
+              },
+              "& .MuiDataGrid-columnsContainer, .MuiDataGrid-cell": {
+                borderBottom: dark
+                  ? "1px dashed rgba(145, 158, 171, 0.24)"
+                  : "1px dashed rgba(145, 158, 171, 0.5)",
+              },
+            }}
+          />
+        </Box>
+      )}
+      <DealActions apiRef={apiRef} hidden={hidden} />
+    </>
   );
 }

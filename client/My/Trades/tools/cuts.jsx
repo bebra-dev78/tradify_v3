@@ -17,6 +17,8 @@ import Iconify from "#/utils/iconify";
 export default function Cuts({ addOverlay }) {
   const [anchorEl, setAnchorEl] = useState(null);
 
+  const open = Boolean(anchorEl);
+
   return (
     <ClickAwayListener
       onClickAway={() => {
@@ -26,7 +28,7 @@ export default function Cuts({ addOverlay }) {
       <div>
         <ListItemButton
           onClick={(event) => {
-            setAnchorEl(anchorEl ? null : event.currentTarget);
+            setAnchorEl(open ? null : event.currentTarget);
           }}
           sx={{
             backgroundColor: "transparent",
@@ -52,7 +54,7 @@ export default function Cuts({ addOverlay }) {
           </ListItemIcon>
         </ListItemButton>
         <Popper
-          open={Boolean(anchorEl)}
+          open={open}
           anchorEl={anchorEl}
           transition
           placement="right-start"
@@ -79,7 +81,7 @@ export default function Cuts({ addOverlay }) {
                   <MenuItem
                     onClick={() => {
                       setAnchorEl(null);
-                      addOverlay("sampleThreeWaves");
+                      addOverlay.current("sampleThreeWaves");
                     }}
                   >
                     <Iconify icon="ph:line-segments-bold" />
@@ -88,7 +90,7 @@ export default function Cuts({ addOverlay }) {
                   <MenuItem
                     onClick={() => {
                       setAnchorEl(null);
-                      addOverlay("sampleFiveWaves");
+                      addOverlay.current("sampleFiveWaves");
                     }}
                   >
                     <Iconify icon="ph:line-segments-bold" />
@@ -97,7 +99,7 @@ export default function Cuts({ addOverlay }) {
                   <MenuItem
                     onClick={() => {
                       setAnchorEl(null);
-                      addOverlay("sampleEightWaves");
+                      addOverlay.current("sampleEightWaves");
                     }}
                   >
                     <Iconify icon="ph:line-segments-bold" />

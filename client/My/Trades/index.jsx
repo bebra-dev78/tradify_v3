@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 
-import KlinesChartCardWrapper from "#/client/My/Trades/klines-chart-card-wrapper";
 import DataTableCardWrapper from "#/client/My/Trades/data-table-card-wrapper";
+import KlinesChartWrapper from "#/client/My/Trades/klines-chart-wrapper";
 import DataTable from "#/client/My/Trades/data-table";
 
 export default function Index() {
@@ -11,7 +11,7 @@ export default function Index() {
 
   return (
     <>
-      <KlinesChartCardWrapper data={data} setData={setData} />
+      <KlinesChartWrapper data={data} setData={setData} />
       <DataTableCardWrapper>
         <DataTable setData={setData} />
       </DataTableCardWrapper>

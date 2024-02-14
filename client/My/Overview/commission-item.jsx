@@ -13,27 +13,31 @@ import { useMemo } from "react";
 import Iconify from "#/utils/iconify";
 
 export default function CommissionItem({ trades }) {
-  const now = Date.now();
+  const [current, diff] = useMemo(() => {
+    if (trades !== null) {
+      const now = Date.now();
 
-  const [counter, subCounter] = useMemo(
-    () => [
-      trades
+      const counter = trades
         ?.filter(
-          (trade) => now - parseInt(trade.entry_time, 10) <= 24 * 60 * 60 * 1000
+          (trade) => now - parseInt(trade.entry_time) <= 24 * 60 * 60 * 1000
         )
-        .reduce((acc, trade) => acc + trade.comission, 0),
-      trades
+        .reduce((acc, trade) => acc + parseFloat(trade.comission), 0);
+
+      const subCounter = trades
         ?.filter((trade) => {
-          const entryTime = parseInt(trade.entry_time, 10);
+          const entryTime = parseInt(trade.entry_time);
           return (
             now - entryTime > 24 * 60 * 60 * 1000 &&
             now - entryTime <= 48 * 60 * 60 * 1000
           );
         })
-        .reduce((acc, trade) => acc - trade.comission, 0),
-    ],
-    [trades]
-  );
+        .reduce((acc, trade) => acc + parseFloat(trade.comission), 0);
+
+      return [counter.toFixed(3), (counter - subCounter).toFixed(3)];
+    } else {
+      return [0, 0];
+    }
+  }, [trades]);
 
   return trades !== null ? (
     <Card
@@ -54,7 +58,7 @@ export default function CommissionItem({ trades }) {
             gap: "8px",
           }}
         >
-          {subCounter < 0 ? (
+          {diff < 0 ? (
             <Iconify
               icon="solar:double-alt-arrow-down-bold-duotone"
               sx={{ color: "error.main" }}
@@ -66,31 +70,31 @@ export default function CommissionItem({ trades }) {
             />
           )}
           <Tooltip
-            title={`Изменение комиссии относительно вчера ${DateTime.now()
-              .minus({ days: 1 })
-              .toFormat("HH:mm")}`}
+            title={`Изменение комиссии относительно вчера в ${DateTime.now().toFormat(
+              "HH:mm"
+            )}`}
             arrow
             placement="right-start"
           >
-            {subCounter < 0 ? (
+            {diff < 0 ? (
               <Typography
                 variant="subtitle2"
                 sx={{ color: "error.main", cursor: "default" }}
               >
-                {subCounter.toFixed(2)}$
+                {diff}$
               </Typography>
             ) : (
               <Typography
                 variant="subtitle2"
                 sx={{ color: "success.main", cursor: "default" }}
               >
-                +{subCounter.toFixed(2)}$
+                +{diff}$
               </Typography>
             )}
           </Tooltip>
         </Stack>
         <Stack>
-          <Typography variant="h3">{counter.toFixed(2)}$</Typography>
+          <Typography variant="h3">{current}$</Typography>
         </Stack>
       </Box>
     </Card>

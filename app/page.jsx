@@ -34,7 +34,7 @@ export default function Landing() {
           <Overlay>
             <Container>
               <Grid container sx={{ alignItems: "center" }}>
-                <Grid xs={12} md={6}>
+                <Grid item xs={12} md={6}>
                   <Stack
                     sx={{
                       m: "auto",
@@ -75,7 +75,7 @@ export default function Landing() {
                     </Stack>
                   </Stack>
                 </Grid>
-                <Grid xs={0} md={6}>
+                <Grid item xs={0} md={6}>
                   <Box
                     sx={{
                       mt: "40px",
@@ -303,8 +303,8 @@ export default function Landing() {
                 maxWidth: "456px",
                 overflow: "hidden",
                 borderRadius: "16px",
-                backgroundImage:
-                  "linear-gradient(135deg, #2065D1 0%, #103996 100%)",
+                background:
+                  "linear-gradient(135deg, rgb(118, 53, 220), rgb(67, 26, 158))",
                 "@media (min-width: 900px)": {
                   display: "flex",
                   maxWidth: "100%",

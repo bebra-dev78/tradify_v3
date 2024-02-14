@@ -19,29 +19,116 @@ import Iconify from "#/utils/iconify";
 export default function StatisticsItem({ trades }) {
   const [openInfo, setOpenInfo] = useState(false);
 
-  const counter = useMemo(() => 0, [trades]);
+  const counter = useMemo(() => {
+    if (trades !== null) {
+      const filteredTrades = trades.filter((trade) => {
+        const entryTime = parseInt(trade.entry_time);
+        const lastWeekTimestamp = moment().subtract(7, "days").valueOf();
+        return entryTime >= lastWeekTimestamp;
+      });
+
+      const daysData = Array(7)
+        .fill(0)
+        .map((_, index) => {
+          const dayStart = moment()
+            .subtract(6 - index, "days")
+            .startOf("day")
+            .valueOf();
+          const dayEnd = moment()
+            .subtract(6 - index, "days")
+            .endOf("day")
+            .valueOf();
+
+          const dailyTrades = filteredTrades.filter((trade) => {
+            const entryTime = parseInt(trade.entry_time);
+            return entryTime >= dayStart && entryTime <= dayEnd;
+          });
+
+          return {
+            profit: dailyTrades.reduce(
+              (acc, trade) =>
+                acc + (parseFloat(trade.income) - parseFloat(trade.comission)),
+              0
+            ),
+            commission: dailyTrades.reduce(
+              (acc, trade) => acc + parseFloat(trade.comission),
+              0
+            ),
+            income: dailyTrades.reduce(
+              (acc, trade) => acc + parseFloat(trade.income),
+              0
+            ),
+          };
+        });
+
+      return {
+        profitData: daysData.map((day) => day.profit),
+        commissionData: daysData.map((day) => day.commission),
+        incomeData: daysData.map((day) => day.income),
+        cumulativeProfit: daysData
+          .reduce((acc, day) => acc + day.profit, 0)
+          .toFixed(2),
+        cumulativeCommission: daysData
+          .reduce((acc, day) => acc + day.commission, 0)
+          .toFixed(3),
+        cumulativeIncome: daysData
+          .reduce((acc, day) => acc + day.income, 0)
+          .toFixed(3),
+      };
+    } else {
+      return {
+        profitData: [0, 0, 0, 0, 0, 0, 0],
+        commissionData: [0, 0, 0, 0, 0, 0, 0],
+        incomeData: [0, 0, 0, 0, 0, 0, 0],
+        cumulativeProfit: 0,
+        cumulativeCommission: 0,
+        cumulativeIncome: 0,
+      };
+    }
+  }, [trades]);
+
+  const categories = useMemo(
+    () => [
+      moment().subtract(6, "days").format("L").split("/")[1] +
+        "." +
+        moment().subtract(6, "days").format("L").split("/")[0],
+      moment().subtract(5, "days").format("L").split("/")[1] +
+        "." +
+        moment().subtract(5, "days").format("L").split("/")[0],
+      moment().subtract(4, "days").format("L").split("/")[1] +
+        "." +
+        moment().subtract(4, "days").format("L").split("/")[0],
+      moment().subtract(3, "days").format("L").split("/")[1] +
+        "." +
+        moment().subtract(3, "days").format("L").split("/")[0],
+      moment().subtract(2, "days").format("L").split("/")[1] +
+        "." +
+        moment().subtract(2, "days").format("L").split("/")[0],
+      moment().subtract(1, "days").format("L").split("/")[1] +
+        "." +
+        moment().subtract(1, "days").format("L").split("/")[0],
+      moment().subtract(0, "days").format("L").split("/")[1] +
+        "." +
+        moment().subtract(0, "days").format("L").split("/")[0],
+    ],
+    []
+  );
 
   return trades !== null ? (
     <Card>
       <CardHeader
-        title="Статистика за 7 дней"
+        title="Статистика за неделю"
         action={
           <IconButton onClick={() => setOpenInfo((prev) => !prev)}>
-            <Iconify
-              icon="solar:info-circle-linear"
-              sx={{ color: openInfo ? "secondary.main" : "text.secondary" }}
-            />
+            <Iconify icon="solar:info-circle-linear" color="text.disabled" />
           </IconButton>
         }
         sx={{ p: "24px 24px 0px" }}
       />
       <Collapse in={openInfo} timeout="auto" unmountOnExit>
         <Typography sx={{ p: "24px", color: "text.secondary" }}>
-          Lorem ipsum dolor sit amet consectetur adipisicing elit. Perferendis
-          ipsam explicabo repudiandae aperiam doloribus quaerat veniam quam quo
-          quidem, error dolorum vitae nulla dolorem. Labore debitis delectus qui
-          incidunt, nisi et illum reprehenderit voluptate, saepe totam quaerat
-          suscipit explicabo expedita?
+          Сводка данных за последние 7 дней в виде графика. Чтобы отобразить или
+          скрыть тип данных, нажмите на маркеры справа.
         </Typography>
       </Collapse>
       <Box
@@ -55,8 +142,6 @@ export default function StatisticsItem({ trades }) {
         <Chart
           options={{
             chart: {
-              type: "line",
-              stacked: false,
               toolbar: {
                 show: false,
               },
@@ -65,6 +150,27 @@ export default function StatisticsItem({ trades }) {
               },
               dropShadow: {
                 enabled: false,
+              },
+            },
+            stroke: {
+              width: [0, 4, 3],
+              curve: "smooth",
+            },
+            plotOptions: {
+              bar: {
+                columnWidth: "20%",
+                borderRadius: 5,
+              },
+            },
+            fill: {
+              type: ["solid", "solid", "gradient"],
+              gradient: {
+                type: "vertical",
+                shadeIntensity: 0.5,
+                inverseColors: false,
+                opacityFrom: 0.5,
+                opacityTo: 0.2,
+                stops: [20, 100, 100, 100],
               },
             },
             legend: {
@@ -91,29 +197,7 @@ export default function StatisticsItem({ trades }) {
               strokeDashArray: 3,
             },
             xaxis: {
-              categories: [
-                moment().subtract(6, "days").format("L").split("/")[1] +
-                  "." +
-                  moment().subtract(6, "days").format("L").split("/")[0],
-                moment().subtract(5, "days").format("L").split("/")[1] +
-                  "." +
-                  moment().subtract(5, "days").format("L").split("/")[0],
-                moment().subtract(4, "days").format("L").split("/")[1] +
-                  "." +
-                  moment().subtract(4, "days").format("L").split("/")[0],
-                moment().subtract(3, "days").format("L").split("/")[1] +
-                  "." +
-                  moment().subtract(3, "days").format("L").split("/")[0],
-                moment().subtract(2, "days").format("L").split("/")[1] +
-                  "." +
-                  moment().subtract(2, "days").format("L").split("/")[0],
-                moment().subtract(1, "days").format("L").split("/")[1] +
-                  "." +
-                  moment().subtract(1, "days").format("L").split("/")[0],
-                moment().subtract(0, "days").format("L").split("/")[1] +
-                  "." +
-                  moment().subtract(0, "days").format("L").split("/")[0],
-              ],
+              categories: categories,
               axisBorder: {
                 show: false,
               },
@@ -128,7 +212,11 @@ export default function StatisticsItem({ trades }) {
                 },
               },
             },
+            markers: {
+              strokeColors: "rgba(22, 28, 36, 0.8)",
+            },
             yaxis: {
+              max: trades?.length === 0 ? 5 : undefined,
               labels: {
                 style: {
                   colors: "#637381",
@@ -136,67 +224,48 @@ export default function StatisticsItem({ trades }) {
                   fontFamily: "inherit",
                 },
                 offsetX: -10,
+                formatter: (val) => val?.toFixed(0),
               },
             },
             tooltip: {
               x: {
                 show: false,
               },
+              y: {
+                formatter: (val) => `${val?.toFixed(2)}$`,
+              },
               style: {
                 fontSize: "12px",
                 fontFamily: "inherit",
               },
             },
-            stroke: {
-              show: true,
-              curve: "smooth",
-              colors: undefined,
-              width: 2,
-              dashArray: 0,
-            },
-            fill: {
-              type: "gradient",
-              gradient: {
-                shadeIntensity: 1,
-                inverseColors: false,
-                opacityFrom: 0.45,
-                opacityTo: 0.05,
-                stops: [20, 100, 100, 100],
-              },
-            },
-            plotOptions: {
-              bar: {
-                columnWidth: "30%",
-              },
-            },
           }}
           series={[
             {
-              name: "Бебра",
+              name: "Доход",
               type: "column",
-              data: [0, 0, 0, 0, 0, 0, 0],
+              color: "rgb(142, 51, 255)",
+              data: counter.incomeData,
             },
             {
-              name: "Абоба",
-              type: "area",
-              data: [0, 0, 0, 0, 0, 0, 0],
-            },
-            {
-              name: "Фандинг",
+              name: "Комиссия",
               type: "line",
-              data: [0, 0, 0, 0, 0, 0, 0],
+              color: "rgb(0, 184, 217)",
+              data: counter.commissionData,
+            },
+            {
+              name: "Прибыль",
+              type: "area",
+              color: "rgb(255, 171, 0)",
+              data: counter.profitData,
             },
           ]}
           height={364}
-          type="line"
         />
       </Box>
       <Divider
         sx={{
-          borderColor: "rgba(145, 158, 171, 0.24)",
-          borderWidth: "0px 0px thin",
           borderStyle: "solid",
-          margin: "0px",
         }}
       />
       <Stack flexDirection="row">
@@ -214,7 +283,7 @@ export default function StatisticsItem({ trades }) {
               color: "rgb(145, 158, 171)",
             }}
           >
-            Бебра
+            Прибыль
           </Typography>
           <Typography
             sx={{
@@ -222,7 +291,7 @@ export default function StatisticsItem({ trades }) {
               fontSize: "1.5rem",
             }}
           >
-            {counter}
+            {counter.cumulativeProfit}$
           </Typography>
         </Box>
         <Divider
@@ -248,7 +317,7 @@ export default function StatisticsItem({ trades }) {
               color: "rgb(145, 158, 171)",
             }}
           >
-            Абоба
+            Комиссия
           </Typography>
           <Typography
             sx={{
@@ -256,7 +325,7 @@ export default function StatisticsItem({ trades }) {
               fontSize: "1.5rem",
             }}
           >
-            {counter}
+            {counter.cumulativeCommission}$
           </Typography>
         </Box>
         <Divider
@@ -282,7 +351,7 @@ export default function StatisticsItem({ trades }) {
               color: "rgb(145, 158, 171)",
             }}
           >
-            Фандинг
+            Доход
           </Typography>
           <Typography
             sx={{
@@ -290,12 +359,12 @@ export default function StatisticsItem({ trades }) {
               fontSize: "1.5rem",
             }}
           >
-            ${counter.toFixed(2)}
+            {counter.cumulativeIncome}$
           </Typography>
         </Box>
       </Stack>
     </Card>
   ) : (
-    <Skeleton animation="wave" sx={{ height: 590 }} />
+    <Skeleton animation="wave" sx={{ height: 592 }} />
   );
 }

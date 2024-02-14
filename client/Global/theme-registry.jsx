@@ -17,6 +17,8 @@ export default function ThemeRegistry({ children }) {
     }
   }, []);
 
+  const dark = mode === "dark";
+
   return (
     <ThemeProvider
       theme={createTheme({
@@ -24,7 +26,7 @@ export default function ThemeRegistry({ children }) {
           mode,
           primary: {
             main: "rgb(0, 167, 111)",
-            light: mode === "dark" ? "rgb(91, 228, 155)" : "rgb(0, 167, 111)",
+            light: dark ? "rgb(91, 228, 155)" : "rgb(0, 167, 111)",
           },
           secondary: { main: "rgb(142, 51, 255)" },
           error: { main: "rgb(255, 86, 48)" },
@@ -32,14 +34,12 @@ export default function ThemeRegistry({ children }) {
           info: { main: "rgb(0, 184, 217)" },
           success: { main: "rgb(34, 197, 94)" },
           text: {
-            primary: mode === "dark" ? "rgb(255, 255, 255)" : "rgb(33, 43, 54)",
-            secondary:
-              mode === "dark" ? "rgb(145, 158, 171)" : "rgb(99, 115, 129)",
-            disabled:
-              mode === "dark" ? "rgb(99, 115, 129)" : "rgb(145, 158, 171)",
+            primary: dark ? "rgb(255, 255, 255)" : "rgb(33, 43, 54)",
+            secondary: dark ? "rgb(145, 158, 171)" : "rgb(99, 115, 129)",
+            disabled: dark ? "rgb(99, 115, 129)" : "rgb(145, 158, 171)",
           },
           background: {
-            paper: mode === "dark" ? "rgb(33, 43, 54)" : "rgb(255, 255, 255)",
+            paper: dark ? "rgb(33, 43, 54)" : "rgb(255, 255, 255)",
           },
         },
         typography: {
@@ -183,15 +183,14 @@ export default function ThemeRegistry({ children }) {
                   color: "inherit",
                 },
                 style: {
-                  backgroundColor:
-                    mode === "dark" ? "rgb(255, 255, 255)" : "rgb(33, 43, 54)",
-                  color:
-                    mode === "dark" ? "rgb(33, 43, 54)" : "rgb(255, 255, 255)",
+                  backgroundColor: dark
+                    ? "rgb(255, 255, 255)"
+                    : "rgb(33, 43, 54)",
+                  color: dark ? "rgb(33, 43, 54)" : "rgb(255, 255, 255)",
                   "&:hover": {
-                    backgroundColor:
-                      mode === "dark"
-                        ? "rgb(196, 205, 213)"
-                        : "rgb(69, 79, 91)",
+                    backgroundColor: dark
+                      ? "rgb(196, 205, 213)"
+                      : "rgb(69, 79, 91)",
                   },
                 },
               },
@@ -285,10 +284,9 @@ export default function ThemeRegistry({ children }) {
                 backgroundSize: "unset",
                 backgroundImage: "none",
                 backgroundPosition: "unset",
-                boxShadow:
-                  mode === "dark"
-                    ? "rgba(0, 0, 0, 0.2) 0px 0px 2px 0px, rgba(0, 0, 0, 0.12) 0px 12px 24px -4px"
-                    : "rgba(145, 158, 171, 0.2) 0px 0px 2px 0px, rgba(145, 158, 171, 0.12) 0px 12px 24px -4px",
+                boxShadow: dark
+                  ? "rgba(0, 0, 0, 0.2) 0px 0px 2px 0px, rgba(0, 0, 0, 0.12) 0px 12px 24px -4px"
+                  : "rgba(145, 158, 171, 0.2) 0px 0px 2px 0px, rgba(145, 158, 171, 0.12) 0px 12px 24px -4px",
               },
             },
           },
@@ -316,10 +314,9 @@ export default function ThemeRegistry({ children }) {
                 backdropFilter: "blur(20px)",
                 backgroundImage:
                   "url(/images/cyan-blur.png), url(/images/red-blur.png)",
-                boxShadow:
-                  mode === "dark"
-                    ? "rgba(0, 0, 0, 0.24) 0px 0px 2px 0px, rgba(0, 0, 0, 0.24) -20px 20px 40px -4px"
-                    : "rgba(145, 158, 171, 0.24) 0px 0px 2px 0px, rgba(145, 158, 171, 0.24) -20px 20px 40px -4px",
+                boxShadow: dark
+                  ? "rgba(0, 0, 0, 0.24) 0px 0px 2px 0px, rgba(0, 0, 0, 0.24) -20px 20px 40px -4px"
+                  : "rgba(145, 158, 171, 0.24) 0px 0px 2px 0px, rgba(145, 158, 171, 0.24) -20px 20px 40px -4px",
               },
             },
           },
@@ -346,8 +343,7 @@ export default function ThemeRegistry({ children }) {
                 fontWeight: 600,
                 border: "2px solid rgb(22, 28, 36)",
                 backgroundColor: "rgb(255, 86, 48)",
-                color:
-                  mode === "dark" ? "rgb(255, 255, 255)" : "rgb(33, 43, 54)",
+                color: dark ? "rgb(255, 255, 255)" : "rgb(33, 43, 54)",
               },
             },
           },
@@ -357,8 +353,9 @@ export default function ThemeRegistry({ children }) {
                 background: "inherit",
                 boxShadow: "none",
                 "&.MuiAccordion-root.Mui-expanded": {
-                  backgroundColor:
-                    mode === "dark" ? "rgb(33, 43, 54)" : "rgb(255, 255, 255)",
+                  backgroundColor: dark
+                    ? "rgb(33, 43, 54)"
+                    : "rgb(255, 255, 255)",
                   borderRadius: "8px !important",
                   boxShadow: "rgba(0, 0, 0, 0.16) 0px 8px 16px 0px",
                 },
@@ -370,28 +367,28 @@ export default function ThemeRegistry({ children }) {
               {
                 props: { severity: "info" },
                 style: {
-                  backgroundColor:
-                    mode === "dark" ? "rgb(0, 55, 104)" : "rgb(202, 253, 245)",
-                  color:
-                    mode === "dark" ? "rgb(202, 253, 245)" : "rgb(0, 55, 104)",
+                  backgroundColor: dark
+                    ? "rgb(0, 55, 104)"
+                    : "rgb(202, 253, 245)",
+                  color: dark ? "rgb(202, 253, 245)" : "rgb(0, 55, 104)",
                 },
               },
               {
                 props: { severity: "error" },
                 style: {
-                  backgroundColor:
-                    mode === "dark" ? "rgb(122, 9, 22)" : "rgb(255, 233, 213)",
-                  color:
-                    mode === "dark" ? "rgb(255, 233, 213)" : "rgb(122, 9, 22)",
+                  backgroundColor: dark
+                    ? "rgb(122, 9, 22)"
+                    : "rgb(255, 233, 213)",
+                  color: dark ? "rgb(255, 233, 213)" : "rgb(122, 9, 22)",
                 },
               },
               {
                 props: { severity: "success" },
                 style: {
-                  backgroundColor:
-                    mode === "dark" ? "rgb(6, 94, 73)" : "rgb(211, 252, 210)",
-                  color:
-                    mode === "dark" ? "rgb(211, 252, 210)" : "rgb(6, 94, 73)",
+                  backgroundColor: dark
+                    ? "rgb(6, 94, 73)"
+                    : "rgb(211, 252, 210)",
+                  color: dark ? "rgb(211, 252, 210)" : "rgb(6, 94, 73)",
                 },
               },
             ],
@@ -426,7 +423,7 @@ export default function ThemeRegistry({ children }) {
           MuiFormLabel: {
             styleOverrides: {
               root: {
-                color: mode === "dark" ? "#5E6E7C" : "#919EAB",
+                color: dark ? "#5E6E7C" : "#919EAB",
               },
             },
           },
@@ -450,10 +447,9 @@ export default function ThemeRegistry({ children }) {
               PaperProps: {
                 sx: {
                   borderRadius: "16px",
-                  boxShadow:
-                    mode === "dark"
-                      ? "rgba(0, 0, 0, 0.24) -40px 40px 80px -8px"
-                      : "rgba(145, 158, 171, 0.24) -40px 40px 80px -8px",
+                  boxShadow: dark
+                    ? "rgba(0, 0, 0, 0.24) -40px 40px 80px -8px"
+                    : "rgba(145, 158, 171, 0.24) -40px 40px 80px -8px",
                   margin: "16px",
                 },
               },
@@ -498,10 +494,9 @@ export default function ThemeRegistry({ children }) {
                 "& .MuiSwitch-track": {
                   borderRadius: 16 / 2,
                   opacity: 1,
-                  backgroundColor:
-                    mode === "dark"
-                      ? "rgba(255,255,255,.35)"
-                      : "rgba(0,0,0,.25)",
+                  backgroundColor: dark
+                    ? "rgba(255,255,255,.35)"
+                    : "rgba(0,0,0,.25)",
                   boxSizing: "border-box",
                 },
               },
@@ -510,10 +505,9 @@ export default function ThemeRegistry({ children }) {
           MuiPopover: {
             defaultProps: {
               slotProps: {
-                boxShadow:
-                  mode === "dark"
-                    ? "rgba(0, 0, 0, 0.24) 0px 0px 2px 0px, rgba(0, 0, 0, 0.24) -20px 20px 40px -4px"
-                    : "rgba(145, 158, 171, 0.24) 0px 0px 2px 0px, rgba(145, 158, 171, 0.24) -20px 20px 40px -4px",
+                boxShadow: dark
+                  ? "rgba(0, 0, 0, 0.24) 0px 0px 2px 0px, rgba(0, 0, 0, 0.24) -20px 20px 40px -4px"
+                  : "rgba(145, 158, 171, 0.24) 0px 0px 2px 0px, rgba(145, 158, 171, 0.24) -20px 20px 40px -4px",
               },
             },
           },
@@ -545,8 +539,7 @@ export default function ThemeRegistry({ children }) {
                   size: "medium",
                 },
                 style: {
-                  color:
-                    mode === "dark" ? "rgb(255, 214, 102)" : "rgb(183, 110, 0)",
+                  color: dark ? "rgb(255, 214, 102)" : "rgb(183, 110, 0)",
                   backgroundColor: "rgba(255, 171, 0, 0.16)",
                   "&:hover": {
                     backgroundColor: "rgba(255, 171, 0, 0.32)",
@@ -560,8 +553,7 @@ export default function ThemeRegistry({ children }) {
                   size: "medium",
                 },
                 style: {
-                  color:
-                    mode === "dark" ? "rgb(97, 243, 243)" : "rgb(0, 108, 156)",
+                  color: dark ? "rgb(97, 243, 243)" : "rgb(0, 108, 156)",
                   backgroundColor: "rgba(0, 184, 217, 0.16)",
                   "&:hover": {
                     backgroundColor: "rgba(0, 184, 217, 0.32)",

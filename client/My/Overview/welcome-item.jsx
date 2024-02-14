@@ -12,11 +12,9 @@ import Link from "next/link";
 import { useUser } from "#/app/my/layout";
 
 export default function WelcomeItem() {
-  const {
-    user: { activate, name },
-  } = useUser();
+  const { user } = useUser();
 
-  return activate === false ? (
+  return user.activate === false ? (
     <Grid container spacing={3} sx={{ flexFlow: "wrap", mb: "25px" }}>
       <Grid item xs={12} md={8}>
         <Stack
@@ -54,9 +52,9 @@ export default function WelcomeItem() {
                 m: "0px 0px 16px",
               }}
             >
-              Добро пожаловать 👋
+              Добро пожаловать,
               <br />
-              {name}
+              {user.name}
             </Typography>
             <Typography
               variant="body2"

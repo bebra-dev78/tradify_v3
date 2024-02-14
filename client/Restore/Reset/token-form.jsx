@@ -102,10 +102,8 @@ export default function Form({ token, email }) {
         });
     } catch (error) {
       setShowFailSnackbar(true);
-
       console.log("Какая-то хуета при смене пароля: ", error);
     }
-
     setLoading(false);
   }
 

@@ -16,68 +16,12 @@ export const metadata = {
 
 const news = [
   {
-    id: 5,
-    md: 6,
-    title: "Лютый пиздец!",
-    content: [
-      "Алексей Навальный вхлам объебался мефедрона",
-      "Lorem ipsum dolor sit, amet consectetur adipisicing elit. Quo veritatis ipsa consequatur alias beatae tempore enim tenetur dolores amet? Sit!",
-      "Lorem ipsum dolor sit amet consectetur adipisicing elit. Accusantium eius consequatur assumenda distinctio inventore impedit ea adipisci facilis qui quam, pariatur quas nostrum, amet explicabo omnis quis rerum itaque aliquam.",
-    ],
-    timestamp: "14 января 2024",
-  },
-  {
-    id: 4,
-    md: 6,
-    title: "Лютый пиздец!",
-    content: [
-      "Алексей Навальный вхлам объебался мефедрона",
-      "Lorem ipsum dolor sit amet consectetur adipisicing elit. Accusantium eius consequatur assumenda distinctio inventore impedit ea adipisci facilis qui quam, pariatur quas nostrum, amet explicabo omnis quis rerum itaque aliquam.",
-      "Lorem ipsum dolor sit amet consectetur adipisicing elit. Accusantium eius consequatur assumenda distinctio inventore impedit ea adipisci facilis qui quam, pariatur quas nostrum, amet explicabo omnis quis rerum itaque aliquam.",
-      "Lorem ipsum dolor sit amet consectetur adipisicing elit. Accusantium eius consequatur assumenda distinctio inventore impedit ea adipisci facilis qui quam, pariatur quas nostrum, amet explicabo omnis quis rerum itaque aliquam.",
-      "Lorem ipsum dolor sit amet consectetur adipisicing elit. Accusantium eius consequatur assumenda distinctio inventore impedit ea adipisci facilis qui quam, pariatur quas nostrum, amet explicabo omnis quis rerum itaque aliquam.",
-    ],
-    timestamp: "6 января 2024",
-  },
-  {
-    id: 3,
-    md: 6,
-    title: "Лютый пиздец!",
-    content: [
-      "Алексей Навальный вхлам объебался мефедрона",
-      "Алексей Навальный вхлам объебался мефедрона",
-      "Алексей Навальный вхлам объебался мефедрона",
-      "Алексей Навальный вхлам объебался мефедрона",
-      "Алексей Навальный вхлам объебался мефедрона",
-      "Алексей Навальный вхлам объебался мефедрона",
-      "Lorem ipsum dolor sit, amet consectetur adipisicing elit. Quo veritatis ipsa consequatur alias beatae tempore enim tenetur dolores amet? Sit!",
-      "Lorem ipsum dolor sit amet consectetur adipisicing elit. Accusantium eius consequatur assumenda distinctio inventore impedit ea adipisci facilis qui quam, pariatur quas nostrum, amet explicabo omnis quis rerum itaque aliquam.",
-    ],
-    timestamp: "15 декаюря 2023",
-  },
-  {
-    id: 2,
-    md: 6,
-    title: "Лютый пиздец!",
-    content: [
-      "Алексей Навальный вхлам объебался мефедрона",
-      "Lorem ipsum dolor sit, amet consectetur adipisicing elit. Quo veritatis ipsa consequatur alias beatae tempore enim tenetur dolores amet? Sit!",
-      "Lorem ipsum dolor sit amet consectetur adipisicing elit. Accusantium eius consequatur assumenda distinctio inventore impedit ea adipisci facilis qui quam, pariatur quas nostrum, amet explicabo omnis quis rerum itaque aliquam.",
-    ],
-    timestamp: "24 февраля 2023",
-  },
-  {
     id: 1,
-    md: 12,
-    title: "Лютый пиздец!",
-    content: [
-      "Алексей Навальный вхлам объебался мефедрона",
-      "Lorem ipsum dolor sit, amet consectetur adipisicing elit. Quo veritatis ipsa consequatur alias beatae tempore enim tenetur dolores amet? Sit! Lorem ipsum dolor sit, amet consectetur adipisicing elit. Quo veritatis ipsa consequatur alias beatae tempore enim tenetur dolores amet?",
-      "Lorem ipsum dolor sit amet consectetur adipisicing elit. Accusantium eius consequatur assumenda distinctio inventore impedit ea adipisci facilis qui quam, pariatur quas nostrum, amet explicabo omnis quis rerum itaque aliquam.",
-      "Lorem ipsum dolor sit amet consectetur adipisicing elit. Accusantium eius consequatur assumenda distinctio inventore impedit ea adipisci facilis qui quam, pariatur quas nostrum, amet explicabo omnis quis rerum itaque aliquam.",
-      "Lorem ipsum dolor sit amet consectetur adipisicing elit. Accusantium eius consequatur assumenda distinctio inventore impedit ea adipisci facilis qui quam, pariatur quas nostrum, amet explicabo omnis quis rerum itaque aliquam.",
-    ],
-    timestamp: "7 октября 2023",
+    md: 6,
+    title: "Обновление 0.2.0",
+    content:
+      "Доброго времени суток, партнёры! За эту неделю мы провели множество изменений в основных страницах панели управления.\n\nГлавная:\n\n• Подкорректированы значения показателей прибыли, комиссии и объёма за последние 24 часа.\n• Добавлен график, отображающий основные показатели сделок за каждый день в течение недели и их суммарные значения.\n\nСделки:\n\n• В таблицу сделок была добавлена функция настройки высоты, сама по себе таблица технически не может адаптироваться по разный размер экрана и поэтому регулировать её высоту необходимо самостоятельно. Также были добавлены различные опции над выбранными сделками в таблице.\n• Был практически полностью переделан свечной график, в результате чего он стал намного оптимизированнее и удобнее.\n\nАналитика:\n\n• Были значительно изменены структура и дизайн страницы, а также добавлена возможность создавать несколько досок и виджетов.",
+    date: "14 февраля 2024",
   },
 ];
 
@@ -144,7 +88,7 @@ export default function News() {
                       width="16px"
                       sx={{ marginRight: "5px", marginTop: "-2px" }}
                     />
-                    {item.timestamp}
+                    {item.date}
                   </Typography>
                 }
                 subheaderTypographyProps={{
@@ -153,11 +97,9 @@ export default function News() {
                 sx={{ p: "24px 24px 0px" }}
               />
               <CardContent sx={{ p: "24px 24px 0px" }}>
-                {item.content.map((paragraph, index) => (
-                  <Typography key={index} variant="body1" paragraph>
-                    {paragraph}
-                  </Typography>
-                ))}
+                <Typography variant="body1" sx={{ whiteSpace: "pre-line" }}>
+                  {item.content}
+                </Typography>
               </CardContent>
             </Card>
           </Grid>

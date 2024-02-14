@@ -29,7 +29,7 @@ import Iconify from "#/utils/iconify";
 
 const EXCHANGES = {
   1: "Binance Futures",
-  2: "Bybit Linear",
+  // 2: "Bybit Linear",
 };
 
 export default function TabKeysAddKeyPanel({ setLoadingTrades }) {
@@ -187,17 +187,15 @@ export default function TabKeysAddKeyPanel({ setLoadingTrades }) {
                     setApikeyError("");
 
                     createBynanceTrades(
-                      Array.from(symbols),
-                      apikey,
-                      secretkey,
-                      k.id,
                       user.id,
+                      k.id,
+                      apikey,
+                      Array.from(symbols),
+                      secretkey,
                       startTime
                     ).then((b) => {
                       setLoadingTrades({ id: null, status: false });
-                      if (b !== null) {
-                        console.log(200);
-                      }
+                      console.log("createBynanceTrades: ", b);
                     });
                   }
                 );
@@ -212,197 +210,207 @@ export default function TabKeysAddKeyPanel({ setLoadingTrades }) {
           });
         break;
 
-      case 2:
-        axios
-          .get("https://api.bybit.com/v5/market/time")
-          .then(({ data: { time } }) => {
-            for (let start = startTime; start < now; start += interval) {
-              const end = Math.min(start + interval, now);
-              requests.push(
-                axios.get(
-                  `https://api.bybit.com/v5/execution/list?category=linear&limit=100&startTime=${start}&endTime=${end}`,
-                  {
-                    headers: {
-                      "X-BAPI-SIGN": crypto
-                        .createHmac("sha256", secretkey)
-                        .update(
-                          time +
-                            apikey +
-                            60000 +
-                            `category=linear&limit=100&startTime=${start}&endTime=${end}`
-                        )
-                        .digest("hex"),
-                      "X-BAPI-API-KEY": apikey,
-                      "X-BAPI-TIMESTAMP": time,
-                      "X-BAPI-RECV-WINDOW": 60000,
-                    },
-                  }
-                )
-              );
-            }
-            Promise.all(requests)
-              .then((responses) => {
-                if (responses[0].data.retMsg !== "OK") {
-                  setLoading(false);
-                  setApikeyError("Неверный ключ");
-                  setSecretkeyError("Неверный ключ");
-                  return;
-                }
+      // case 2:
+      //   axios
+      //     .get("https://api.bybit.com/v5/market/time")
+      //     .then(({ data: { time } }) => {
+      //       for (let start = startTime; start < now; start += interval) {
+      //         const end = Math.min(start + interval, now);
+      //         requests.push(
+      //           axios.get(
+      //             `https://api.bybit.com/v5/execution/list?category=linear&limit=100&startTime=${start}&endTime=${end}`,
+      //             {
+      //               headers: {
+      //                 "X-BAPI-SIGN": crypto
+      //                   .createHmac("sha256", secretkey)
+      //                   .update(
+      //                     time +
+      //                       apikey +
+      //                       60000 +
+      //                       `category=linear&limit=100&startTime=${start}&endTime=${end}`
+      //                   )
+      //                   .digest("hex"),
+      //                 "X-BAPI-API-KEY": apikey,
+      //                 "X-BAPI-TIMESTAMP": time,
+      //                 "X-BAPI-RECV-WINDOW": 60000,
+      //               },
+      //             }
+      //           )
+      //         );
+      //       }
+      //       Promise.all(requests)
+      //         .then((responses) => {
+      //           if (responses[0].data.retMsg !== "OK") {
+      //             setLoading(false);
+      //             setApikeyError("Неверный ключ");
+      //             setSecretkeyError("Неверный ключ");
+      //             return;
+      //           }
 
-                createKey(user.id, apikey, secretkey, title, exchange).then(
-                  (k) => {
-                    setLoading(false);
+      //           createKey(user.id, apikey, secretkey, title, exchange).then(
+      //             (k) => {
+      //               setLoading(false);
 
-                    if (k === null) {
-                      setApikeyError("Такой ключ уже существует");
-                      return;
-                    }
+      //               if (k === null) {
+      //                 setApikeyError("Такой ключ уже существует");
+      //                 return;
+      //               }
 
-                    setOpenDialog(false);
-                    setShowSuccessSnackbar(true);
-                    setKeys((prev) => [...prev, k]);
-                    setLoadingTrades({ id: k.id, status: true });
-                    secretkeyRef.current.value = "";
-                    exchangeRef.current.value = "";
-                    apikeyRef.current.value = "";
-                    titleRef.current.value = "";
-                    setSecretkeyError("");
-                    setApikeyError("");
+      //               setOpenDialog(false);
+      //               setShowSuccessSnackbar(true);
+      //               setKeys((prev) => [...prev, k]);
+      //               setLoadingTrades({ id: k.id, status: true });
+      //               secretkeyRef.current.value = "";
+      //               exchangeRef.current.value = "";
+      //               apikeyRef.current.value = "";
+      //               titleRef.current.value = "";
+      //               setSecretkeyError("");
+      //               setApikeyError("");
 
-                    const g = responses
-                      .reduce(
-                        (acc, response) =>
-                          acc.concat(response.data.result.list),
-                        []
-                      )
-                      .reduce((groups, deal) => {
-                        if (!groups[deal.symbol]) {
-                          groups[deal.symbol] = [];
-                        }
-                        groups[deal.symbol].push(deal);
-                        return groups;
-                      }, {});
+      //               const g = responses
+      //                 .reduce(
+      //                   (acc, response) =>
+      //                     acc.concat(response.data.result.list),
+      //                   []
+      //                 )
+      //                 .reduce((groups, deal) => {
+      //                   if (!groups[deal.symbol]) {
+      //                     groups[deal.symbol] = [];
+      //                   }
+      //                   groups[deal.symbol].push(deal);
+      //                   return groups;
+      //                 }, {});
 
-                    for (const symbol in g) {
-                      g[symbol].sort((a, b) =>
-                        a.execTime > b.execTime
-                          ? 1
-                          : a.execTime < b.execTime
-                          ? -1
-                          : 0
-                      );
-                    }
+      //               for (const symbol in g) {
+      //                 g[symbol].sort((a, b) =>
+      //                   a.execTime > b.execTime
+      //                     ? 1
+      //                     : a.execTime < b.execTime
+      //                     ? -1
+      //                     : 0
+      //                 );
+      //               }
 
-                    const s = Object.values(g).reduce(
-                      (sorted, deals) => sorted.concat(deals),
-                      []
-                    );
+      //               const s = Object.values(g).reduce(
+      //                 (sorted, deals) => sorted.concat(deals),
+      //                 []
+      //               );
 
-                    const trades = [];
-                    let currentTrade = [];
+      //               const trades = [];
+      //               let currentTrade = [];
 
-                    for (const deal of s) {
-                      // Check conditions for grouping Bybit trades
-                      if (
-                        (deal.closedSize === "0" &&
-                          (currentTrade.length === 0 ||
-                            currentTrade[currentTrade.length - 1].closedSize !==
-                              "0")) ||
-                        (currentTrade.length > 0 &&
-                          deal.symbol !== currentTrade[0].symbol)
-                      ) {
-                        if (currentTrade.length > 0) {
-                          trades.push(currentTrade);
-                          currentTrade = [];
-                        }
-                      }
+      //               for (const deal of s) {
+      //                 if (
+      //                   (deal.closedSize === "0" &&
+      //                     (currentTrade.length === 0 ||
+      //                       currentTrade[currentTrade.length - 1].closedSize !==
+      //                         "0")) ||
+      //                   (currentTrade.length > 0 &&
+      //                     deal.symbol !== currentTrade[0].symbol)
+      //                 ) {
+      //                   if (currentTrade.length > 0) {
+      //                     trades.push(currentTrade);
+      //                     currentTrade = [];
+      //                   }
+      //                 }
 
-                      currentTrade.push(deal);
-                    }
+      //                 currentTrade.push(deal);
+      //               }
 
-                    if (currentTrade.length > 1) {
-                      trades.push(currentTrade);
-                    }
+      //               if (currentTrade.length > 1) {
+      //                 trades.push(currentTrade);
+      //               }
 
-                    createBybitTrades(
-                      trades.map((trade) => {
-                        const b = trade.filter((t) => t.side === "Buy");
-                        const s = trade.filter((t) => t.side === "Sell");
-                        const bt = b.reduce(
-                          (a, c) => a + parseFloat(c.execQty),
-                          0
-                        );
-                        const st = s.reduce(
-                          (a, c) => a + parseFloat(c.execQty),
-                          0
-                        );
-                        const bv = b.reduce(
-                          (a, c) => a + parseFloat(c.execValue),
-                          0
-                        );
-                        const sv = s.reduce(
-                          (a, c) => a + parseFloat(c.execValue),
-                          0
-                        );
-                        return {
-                          uid: user.id,
-                          kid: k.id,
-                          exchange,
-                          symbol: trade[0].symbol,
-                          entry_time: String(trade[0].execTime),
-                          exit_time: String(trade[trade.length - 1].execTime),
-                          average_entry_price:
-                            b.reduce(
-                              (a, c) =>
-                                a +
-                                parseFloat(c.execPrice) * parseFloat(c.execQty),
-                              0
-                            ) / bt,
-                          average_exit_price:
-                            s.reduce(
-                              (a, c) =>
-                                a +
-                                parseFloat(c.execPrice) * parseFloat(c.execQty),
-                              0
-                            ) / st,
-                          side: trade[0].side === "Buy" ? "BUY" : "SELL",
-                          procent: (sv / st - bv / bt) / (bv / bt),
-                          income: trade.reduce(
-                            (a, c) => a + parseFloat(c.execFee),
-                            0
-                          ),
-                          turnover: bt + st,
-                          max_volume: Math.max(
-                            bt + st,
-                            Math.max(
-                              ...b.map((b) => parseFloat(b.execQty)),
-                              ...s.map((s) => parseFloat(s.execQty))
-                            )
-                          ),
-                          volume: trade.reduce(
-                            (a, d) => a + parseFloat(d.execValue),
-                            0
-                          ),
-                          comission: Number(
-                            trade.reduce((a, d) => a + parseFloat(d.execFee), 0)
-                          ),
-                        };
-                      })
-                    ).then((b) => {
-                      setLoadingTrades({ id: null, status: false });
-                      console.log(b);
-                    });
-                  }
-                );
-              })
-              .catch((e) => {
-                setLoading(false);
-                setApikeyError("Неверный ключ");
-                setSecretkeyError("Неверный ключ");
-                console.log("хуйня от bybit: ", e);
-              });
-          });
-        break;
+      //               createBybitTrades(
+      //                 trades.map((trade) => {
+      //                   const b = trade.filter((t) => t.side === "Buy");
+      //                   const s = trade.filter((t) => t.side === "Sell");
+      //                   const bt = b.reduce(
+      //                     (a, c) => a + parseFloat(c.execQty),
+      //                     0
+      //                   );
+      //                   const st = s.reduce(
+      //                     (a, c) => a + parseFloat(c.execQty),
+      //                     0
+      //                   );
+      //                   const bv = b.reduce(
+      //                     (a, c) => a + parseFloat(c.execValue),
+      //                     0
+      //                   );
+      //                   const sv = s.reduce(
+      //                     (a, c) => a + parseFloat(c.execValue),
+      //                     0
+      //                   );
+      //                   return {
+      //                     uid: user.id,
+      //                     kid: k.id,
+      //                     exchange: 2,
+      //                     symbol: trade[0].symbol,
+      //                     entry_time: String(trade[0].execTime),
+      //                     exit_time: String(trade[trade.length - 1].execTime),
+      //                     side: trade[0].side === "Buy" ? "BUY" : "SELL",
+      //                     procent: (
+      //                       ((sv / st - bv / bt) / (bv / bt)) *
+      //                       100
+      //                     ).toFixed(2),
+      //                     income: trade
+      //                       .reduce((a, c) => a + parseFloat(c.execFee), 0)
+      //                       .toFixed(3),
+      //                     turnover: ((bt + st) / 2).toFixed(1),
+      //                     max_volume: (
+      //                       Math.max(
+      //                         bt + st,
+      //                         Math.max(
+      //                           ...b.map((b) => parseFloat(b.execQty)),
+      //                           ...s.map((s) => parseFloat(s.execQty))
+      //                         )
+      //                       ) / 2
+      //                     ).toFixed(1),
+      //                     volume: (
+      //                       trade.reduce(
+      //                         (a, d) => a + parseFloat(d.execValue),
+      //                         0
+      //                       ) / 2
+      //                     ).toFixed(2),
+      //                     comission: trade
+      //                       .reduce((a, d) => a + parseFloat(d.execFee), 0)
+      //                       .toFixed(3),
+      //                     avg_entry_price: (
+      //                       b.reduce(
+      //                         (a, c) =>
+      //                           a +
+      //                           parseFloat(c.execPrice) * parseFloat(c.execQty),
+      //                         0
+      //                       ) / bt
+      //                     ).toFixed(4),
+      //                     avg_exit_price: (
+      //                       s.reduce(
+      //                         (a, c) =>
+      //                           a +
+      //                           parseFloat(c.execPrice) * parseFloat(c.execQty),
+      //                         0
+      //                       ) / st
+      //                     ).toFixed(4),
+      //                     duration: String(
+      //                       trade[trade.length - 1].execTime - trade[0].execTime
+      //                     ),
+      //                   };
+      //                 })
+      //               ).then((b) => {
+      //                 setLoadingTrades({ id: null, status: false });
+      //                 console.log("createBybitTrades: ", b);
+      //               });
+      //             }
+      //           );
+      //         })
+      //         .catch((e) => {
+      //           setLoading(false);
+      //           setApikeyError("Неверный ключ");
+      //           setSecretkeyError("Неверный ключ");
+      //           console.log("хуйня от bybit: ", e);
+      //         });
+      //     });
+      //   break;
 
       default:
         setLoading(false);
@@ -419,14 +427,14 @@ export default function TabKeysAddKeyPanel({ setLoadingTrades }) {
           mt: 3,
         }}
       >
-        доступно ключей: {2 - keys.length}
+        доступно ключей: {1 - keys.length}
       </Typography>
       <Box sx={{ position: "absolute", top: "24px", right: "24px" }}>
         <Button
           variant="contained"
           color="inherit"
           size="medium"
-          disabled={keys.length > 1}
+          disabled={keys.length > 0}
           startIcon={<Iconify icon="line-md:plus" width={20} />}
           onClick={() => {
             setOpenDialog(true);
@@ -520,9 +528,9 @@ export default function TabKeysAddKeyPanel({ setLoadingTrades }) {
                   {keys.every((key) => key.exchange !== 1) && (
                     <MenuItem value={1}>Binance Futures</MenuItem>
                   )}
-                  {keys.every((key) => key.exchange !== 2) && (
+                  {/* {keys.every((key) => key.exchange !== 2) && (
                     <MenuItem value={2}>Bybit Linear</MenuItem>
-                  )}
+                  )} */}
                 </Select>
                 <FormHelperText>{exchangeError}</FormHelperText>
               </FormControl>

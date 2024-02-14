@@ -18,6 +18,8 @@ import Iconify from "#/utils/iconify";
 export default function Lines({ addOverlay }) {
   const [anchorEl, setAnchorEl] = useState(null);
 
+  const open = Boolean(anchorEl);
+
   return (
     <ClickAwayListener
       onClickAway={() => {
@@ -26,8 +28,8 @@ export default function Lines({ addOverlay }) {
     >
       <div>
         <ListItemButton
-          onClick={(event) => {
-            setAnchorEl(anchorEl ? null : event.currentTarget);
+          onClick={(e) => {
+            setAnchorEl(open ? null : e.currentTarget);
           }}
           sx={{
             p: "4px",
@@ -53,7 +55,7 @@ export default function Lines({ addOverlay }) {
           </ListItemIcon>
         </ListItemButton>
         <Popper
-          open={Boolean(anchorEl)}
+          open={open}
           anchorEl={anchorEl}
           transition
           placement="right-start"
@@ -80,7 +82,7 @@ export default function Lines({ addOverlay }) {
                   <MenuItem
                     onClick={() => {
                       setAnchorEl(null);
-                      addOverlay("straightLine");
+                      addOverlay.current("straightLine");
                     }}
                   >
                     <svg
@@ -101,7 +103,7 @@ export default function Lines({ addOverlay }) {
                   <MenuItem
                     onClick={() => {
                       setAnchorEl(null);
-                      addOverlay("horizontalStraightLine");
+                      console.log(addOverlay.current("horizontalStraightLine"));
                     }}
                   >
                     <Iconify icon="mdi:ray-vertex" />
@@ -112,7 +114,7 @@ export default function Lines({ addOverlay }) {
                   <MenuItem
                     onClick={() => {
                       setAnchorEl(null);
-                      addOverlay("verticalStraightLine");
+                      addOverlay.current("verticalStraightLine");
                     }}
                   >
                     <svg
@@ -136,7 +138,7 @@ export default function Lines({ addOverlay }) {
                   <MenuItem
                     onClick={() => {
                       setAnchorEl(null);
-                      addOverlay("rayLine");
+                      addOverlay.current("rayLine");
                     }}
                   >
                     <svg
@@ -157,7 +159,7 @@ export default function Lines({ addOverlay }) {
                   <MenuItem
                     onClick={() => {
                       setAnchorEl(null);
-                      addOverlay("horizontalRayLine");
+                      addOverlay.current("horizontalRayLine");
                     }}
                   >
                     <Iconify icon="mdi:ray-end-arrow" />
@@ -168,7 +170,7 @@ export default function Lines({ addOverlay }) {
                   <MenuItem
                     onClick={() => {
                       setAnchorEl(null);
-                      addOverlay("verticalRayLine");
+                      addOverlay.current("verticalRayLine");
                     }}
                   >
                     <svg
@@ -192,7 +194,7 @@ export default function Lines({ addOverlay }) {
                   <MenuItem
                     onClick={() => {
                       setAnchorEl(null);
-                      addOverlay("segment");
+                      addOverlay.current("segment");
                     }}
                   >
                     <Iconify icon="tabler:line" />
@@ -201,7 +203,7 @@ export default function Lines({ addOverlay }) {
                   <MenuItem
                     onClick={() => {
                       setAnchorEl(null);
-                      addOverlay("horizontalSegment");
+                      addOverlay.current("horizontalSegment");
                     }}
                   >
                     <Iconify icon="mdi:ray-start-end" />
@@ -212,7 +214,7 @@ export default function Lines({ addOverlay }) {
                   <MenuItem
                     onClick={() => {
                       setAnchorEl(null);
-                      addOverlay("verticalSegment");
+                      addOverlay.current("verticalSegment");
                     }}
                   >
                     <svg
@@ -234,7 +236,7 @@ export default function Lines({ addOverlay }) {
                   <MenuItem
                     onClick={() => {
                       setAnchorEl(null);
-                      addOverlay("priceLine");
+                      addOverlay.current("priceLine");
                     }}
                   >
                     <Iconify icon="material-symbols:line-start" />
@@ -243,7 +245,7 @@ export default function Lines({ addOverlay }) {
                   <MenuItem
                     onClick={() => {
                       setAnchorEl(null);
-                      addOverlay("priceChannelLine");
+                      addOverlay.current("priceChannelLine");
                     }}
                   >
                     <svg viewBox="0 0 24 24" width="24" height="24">

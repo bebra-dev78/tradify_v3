@@ -79,10 +79,9 @@ export default function Form() {
             setAction(true);
           }
         });
-    } catch (error) {
+    } catch (e) {
       setShowError(true);
-
-      console.log("Какая-то хуета при сбросе пароля: ", error);
+      console.log("Какая-то хуета при сбросе пароля: ", e);
     }
     setLoading(false);
   }

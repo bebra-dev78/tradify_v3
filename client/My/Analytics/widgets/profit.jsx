@@ -13,10 +13,7 @@ import moment from "moment";
 
 import Iconify from "#/utils/iconify";
 
-export default memo(function CumulativeCommission({
-  trades,
-  handleDeleteWidget,
-}) {
+export default memo(function CumulativeProfit({ trades, handleDeleteWidget }) {
   const theme = useTheme();
 
   const counter = useMemo(() => {
@@ -28,28 +25,50 @@ export default memo(function CumulativeCommission({
       const last30DaysEnd = moment().endOf("day").valueOf();
 
       const last30DaysTrades = trades.filter((trade) => {
-        const exitTime = parseInt(trade.exit_time);
-        return exitTime >= last30DaysStart && exitTime <= last30DaysEnd;
+        const entryTime = parseInt(trade.entry_time);
+        return entryTime >= last30DaysStart && entryTime <= last30DaysEnd;
       });
 
-      const cumulativeCommission = [];
-      let totalCommission = 0;
+      const cumulativeProfitByDay = Array.from({ length: 30 }, (_, index) => {
+        const dayStart = moment()
+          .subtract(index, "days")
+          .startOf("day")
+          .valueOf();
+        const dayEnd = moment().subtract(index, "days").endOf("day").valueOf();
 
-      last30DaysTrades.forEach((trade) => {
-        totalCommission += parseFloat(trade.comission);
-        cumulativeCommission.push(totalCommission.toFixed(3));
+        const dailyTrades = last30DaysTrades.filter((trade) => {
+          const entryTime = parseInt(trade.entry_time);
+          return entryTime >= dayStart && entryTime <= dayEnd;
+        });
+
+        const dailyCumulativeProfit = dailyTrades.reduce(
+          (acc, trade) =>
+            acc + parseFloat(trade.income) - parseFloat(trade.comission),
+          0
+        );
+
+        return dailyCumulativeProfit;
       });
 
-      return cumulativeCommission.slice(-30); // Adjust the slice to include the last 30 days
+      return cumulativeProfitByDay.reverse(); // Reverse the array to match the order of categories
     } else {
       return [];
     }
   }, [trades]);
 
+  const categories = useMemo(
+    () =>
+      Array.from({ length: 30 }, (_, index) => {
+        const date = moment().subtract(index, "days");
+        return date.format("DD.MM");
+      }).reverse(),
+    []
+  );
+
   return counter.length > 0 ? (
     <Card sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
       <CardHeader
-        title="Кумулятивная комиссия"
+        title="Прибыль"
         titleTypographyProps={{
           className: "drag-header",
           sx: { cursor: "move" },
@@ -57,7 +76,7 @@ export default memo(function CumulativeCommission({
         action={
           <IconButton
             onClick={() => {
-              handleDeleteWidget(4);
+              handleDeleteWidget(6);
             }}
           >
             <Iconify icon="solar:close-square-outline" color="text.disabled" />
@@ -80,6 +99,7 @@ export default memo(function CumulativeCommission({
               enabled: false,
             },
           },
+          colors: ["#00A76F"],
           fill: {
             type: "gradient",
             gradient: {
@@ -122,9 +142,7 @@ export default memo(function CumulativeCommission({
             enabled: false,
           },
           xaxis: {
-            categories: Array.from({ length: 30 }, (_, index) =>
-              moment().subtract(index, "days").format("DD.MM")
-            ).reverse(),
+            categories: categories,
             axisBorder: {
               show: false,
             },
@@ -142,6 +160,8 @@ export default memo(function CumulativeCommission({
               style: {
                 colors: theme.palette.text.secondary,
               },
+              offsetX: -10,
+              formatter: (val) => val?.toFixed(0),
             },
           },
           tooltip: {
@@ -156,12 +176,12 @@ export default memo(function CumulativeCommission({
         }}
         series={[
           {
-            name: "Всего",
-            color: "rgb(255, 171, 0)",
+            name: "",
+            color: "rgb(0, 167, 111)",
             data: counter,
           },
         ]}
-        height={"85%"}
+        height="85%"
         type="area"
       />
       <Box sx={{ flexGrow: 1 }} />

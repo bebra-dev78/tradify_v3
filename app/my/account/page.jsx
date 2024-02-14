@@ -10,7 +10,7 @@ export const metadata = {
 export default function Account() {
   return (
     <>
-      <Typography variant="h4" paragraph>
+      <Typography variant="h4" paragraph sx={{ color: "text.primary" }}>
         Аккаунт
       </Typography>
       <TabsWrapper />

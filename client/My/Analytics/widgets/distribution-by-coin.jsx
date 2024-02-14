@@ -3,30 +3,30 @@
 import CardHeader from "@mui/material/CardHeader";
 import Typography from "@mui/material/Typography";
 import IconButton from "@mui/material/IconButton";
-import { useTheme } from "@mui/material/styles";
 import Skeleton from "@mui/material/Skeleton";
 import Divider from "@mui/material/Divider";
 import Stack from "@mui/material/Stack";
 import Card from "@mui/material/Card";
 import Box from "@mui/material/Box";
 
-import { useState, useEffect } from "react";
+import { useMemo, memo } from "react";
 import Chart from "react-apexcharts";
 
 import Iconify from "#/utils/iconify";
 
-export default function DistributionByCoin({ trades, onDeleteWidget }) {
-  const theme = useTheme();
-
-  const [counter, setCounter] = useState({});
-
-  useEffect(() => {
-    if (trades.length > 0) {
+export default memo(function DistributionByCoin({
+  trades,
+  handleDeleteWidget,
+}) {
+  const counter = useMemo(() => {
+    if (trades !== null) {
       const u = {};
       trades.forEach((trade) => {
         u[trade.symbol] = u[trade.symbol] ? u[trade.symbol] + 1 : 1;
       });
-      setCounter(u);
+      return u;
+    } else {
+      return {};
     }
   }, [trades]);
 
@@ -39,11 +39,12 @@ export default function DistributionByCoin({ trades, onDeleteWidget }) {
           sx: { cursor: "move" },
         }}
         action={
-          <IconButton onClick={onDeleteWidget}>
-            <Iconify
-              icon="solar:close-square-outline"
-              sx={{ color: "text.disabled" }}
-            />
+          <IconButton
+            onClick={() => {
+              handleDeleteWidget(1);
+            }}
+          >
+            <Iconify icon="solar:close-square-outline" color="text.disabled" />
           </IconButton>
         }
         sx={{ p: "24px 24px 0px" }}
@@ -53,19 +54,24 @@ export default function DistributionByCoin({ trades, onDeleteWidget }) {
         options={{
           chart: {
             type: "pie",
+            animations: {
+              dynamicAnimation: {
+                enabled: false,
+              },
+            },
           },
           labels: Object.keys(counter),
           stroke: {
             show: true,
-            colors: [theme.palette.background.paper],
+            colors: ["rgb(33, 43, 54)"],
             width: 3,
           },
           colors: [
-            theme.palette.info.main,
-            theme.palette.error.main,
-            theme.palette.warning.main,
-            theme.palette.success.main,
-            theme.palette.secondary.main,
+            "rgb(0, 184, 217)",
+            "rgb(255, 86, 48)",
+            "rgb(255, 171, 0)",
+            "rgb(142, 51, 255)",
+            "rgb(34, 197, 94)",
             "#009E69",
             "#FF5630",
             "#FFAB00",
@@ -150,30 +156,19 @@ export default function DistributionByCoin({ trades, onDeleteWidget }) {
           </Typography>
         </Stack>
       </Box>
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="18"
-        height="18"
-        viewBox="0 0 24 24"
-        style={{
+      <Iconify
+        icon="tabler:border-corner-ios"
+        color="#637381"
+        width={18}
+        sx={{
           position: "absolute",
+          rotate: "180deg",
           bottom: 0,
           right: 0,
         }}
-      >
-        <g transform="rotate(180 12 12)">
-          <path
-            fill="none"
-            stroke="#637381"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M4 20v-5C4 8.925 8.925 4 15 4h5"
-          />
-        </g>
-      </svg>
+      />
     </Card>
   ) : (
     <Skeleton animation="wave" sx={{ height: "100%" }} />
   );
-}
+});
