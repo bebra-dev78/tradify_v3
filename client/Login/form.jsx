@@ -11,6 +11,7 @@ import { signIn } from "next-auth/react";
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import NProgress from "nprogress";
+import axios from "axios";
 
 import { LinkToRestore } from "#/client/Login/links";
 import ErrorIcon from "#/client/Shared/error-icon";
@@ -95,9 +96,9 @@ export default function Form() {
       email,
       password,
       redirect: false,
-    }).then(({ status }) => {
+    }).then((data) => {
       setLoading(false);
-      if (status === 401) {
+      if (data.status === 401) {
         setAction(true);
       } else {
         NProgress.start();
