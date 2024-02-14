@@ -7,7 +7,7 @@ import TextField from "@mui/material/TextField";
 import Alert from "@mui/material/Alert";
 import Stack from "@mui/material/Stack";
 
-import { signIn, useSession } from "next-auth/react";
+import { signIn } from "next-auth/react";
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import NProgress from "nprogress";
@@ -17,16 +17,16 @@ import ErrorIcon from "#/client/Shared/error-icon";
 import Iconify from "#/utils/iconify";
 
 export default function Form() {
-  const { status } = useSession();
   const router = useRouter();
 
   useEffect(() => {
-    router.prefetch("/my/overview");
-    if (status === "authenticated") {
-      NProgress.start();
-      router.push("/my/overview");
-    }
-  }, [status]);
+    axios.get("/api/bebra").then(({ data }) => {
+      if (data) {
+        NProgress.start();
+        router.push("/my/overview");
+      }
+    });
+  }, []);
 
   const [passwordError, setPasswordError] = useState("");
   const [emailError, setEmailError] = useState("");
@@ -99,6 +99,9 @@ export default function Form() {
       setLoading(false);
       if (status === 401) {
         setAction(true);
+      } else {
+        NProgress.start();
+        router.push("/my/overview");
       }
     });
   }
