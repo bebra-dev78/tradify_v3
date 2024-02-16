@@ -39,7 +39,7 @@ export default function Overview() {
         <Grid item xs={12} md={6} xl={6}>
           <Card>
             <CardHeader
-              title="Обновление 0.1.0"
+              title="Обновление 0.2.0"
               subheader={
                 <Typography
                   variant="caption"

@@ -13,11 +13,12 @@ export async function createBynanceTrades(
   startTime
 ) {
   try {
-    const t = await fetch("https://fapi.binance.com/fapi/v1/time", {
-      cache: "no-cache",
-    });
-
-    const { serverTime } = await t.json();
+    const { serverTime } = await fetch(
+      "https://fapi.binance.com/fapi/v1/time",
+      {
+        cache: "no-cache",
+      }
+    ).then((r) => r.json());
 
     var deals = await Promise.all(
       symbols.map(async (symbol) => {

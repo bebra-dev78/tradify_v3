@@ -14,5 +14,8 @@ export default function NavigationEvents() {
 
   useEffect(() => {
     NProgress.done();
+    ym(96485654, "hit", pathname);
   }, [pathname]);
+
+  return null;
 }

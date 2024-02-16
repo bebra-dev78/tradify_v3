@@ -41,6 +41,19 @@ export default function ProfitItem({ trades }) {
           0
         );
 
+        console.log(trades
+          ?.filter(
+            (trade) => now - parseInt(trade.entry_time, 10) <= 24 * 60 * 60 * 1000
+          ));
+        console.log(trades
+          ?.filter((trade) => {
+            const entryTime = parseInt(trade.entry_time, 10);
+            return (
+              now - entryTime > 24 * 60 * 60 * 1000 &&
+              now - entryTime <= 48 * 60 * 60 * 1000
+            );
+          }));
+
       return [counter.toFixed(2), (counter - subCounter).toFixed(2)];
     } else {
       return [0, 0];
