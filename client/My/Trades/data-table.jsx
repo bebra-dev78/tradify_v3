@@ -1252,33 +1252,37 @@ export default function DataTable({ setData }) {
 
                     const s = Array.from(symbols);
 
-                    console.log("symbols: ", s);
+                    console.log("s: ", s);
 
                     if (s.length > 0) {
                       axios
                         .get("https://fapi.binance.com/fapi/v1/time")
                         .then(({ data }) => {
                           Promise.all(
-                            s.map((symbol) => {
-                              axios.get(
-                                `https://fapi.binance.com/fapi/v1/userTrades?symbol=${symbol}&timestamp=${
-                                  data.serverTime
-                                }&signature=${crypto
-                                  .createHmac("sha256", key1.secret_key)
-                                  .update(
-                                    `symbol=${symbol}&timestamp=${data.serverTime}&recvWindow=60000&limit=1000&startTime=${startTime}`
+                            s.map(
+                              async (symbol) =>
+                                await axios
+                                  .get(
+                                    `https://fapi.binance.com/fapi/v1/userTrades?symbol=${symbol}&timestamp=${
+                                      data.serverTime
+                                    }&signature=${crypto
+                                      .createHmac("sha256", key1.secret_key)
+                                      .update(
+                                        `symbol=${symbol}&timestamp=${data.serverTime}&recvWindow=60000&limit=1000&startTime=${startTime}`
+                                      )
+                                      .digest(
+                                        "hex"
+                                      )}&recvWindow=60000&limit=1000&startTime=${startTime}`,
+                                    {
+                                      headers: {
+                                        "X-MBX-APIKEY": key1.api_key,
+                                      },
+                                    }
                                   )
-                                  .digest(
-                                    "hex"
-                                  )}&recvWindow=60000&limit=1000&startTime=${startTime}`,
-                                {
-                                  headers: {
-                                    "X-MBX-APIKEY": key1.api_key,
-                                  },
-                                }
-                              );
-                            })
-                          );
+                                  .then((r) => r.data)
+                            )
+                          ).then((deals) => {
+                            console.log("deals (bynance): ", deals);
 
                           var trades = [];
 
@@ -1427,6 +1431,8 @@ export default function DataTable({ setData }) {
                               ]);
                             });
                           });
+                        });
+
                         });
                     }
                   })

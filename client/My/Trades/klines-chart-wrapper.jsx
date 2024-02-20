@@ -815,8 +815,13 @@ export default function KlinesChartWrapper({ data, setData }) {
       if (data !== null) {
         let current;
         updatedAggDealsRef.current = {};
+
+        console.log("interval: ", interval);
+
         switch (exchange) {
           case 1:
+            console.log("1");
+
             await Promise.all([
               axios.get(
                 `https://fapi.binance.com/fapi/v1/klines?symbol=${symbol}&startTime=${
@@ -840,21 +845,22 @@ export default function KlinesChartWrapper({ data, setData }) {
 
               axios
                 .get("https://fapi.binance.com/fapi/v1/time")
-                .then(({ data: { serverTime } }) => {
+                .then(({ data }) => {
                   axios
                     .get(`https://fapi.binance.com/fapi/v1/userTrades`, {
                       headers: {
                         "X-MBX-APIKEY": key1.api_key,
                       },
                       params: {
-                        timestamp: serverTime,
+                        timestamp: data.serverTime,
                         recvWindow: 60000,
                         startTime: start,
                         endTime: end,
+                        symbol,
                         signature: crypto
                           .createHmac("sha256", key1.secret_key)
                           .update(
-                            `timestamp=${serverTime}&recvWindow=60000&startTime=${start}&endTime=${end}`
+                            `timestamp=${data.serverTime}&recvWindow=60000&startTime=${start}&endTime=${end}&symbol=${symbol}`
                           )
                           .digest("hex"),
                       },
@@ -887,10 +893,12 @@ export default function KlinesChartWrapper({ data, setData }) {
                         }
                         updatedAggDealsRef.current = updatedAggDeals;
                       });
+
                       console.log(
-                        "updatedAggDealsRef.current: ",
+                        "сделки для графика: ",
                         updatedAggDealsRef.current
                       );
+
                       aggDealsRef.current = Object.values(
                         updatedAggDealsRef.current
                       ).map((deal) => ({
@@ -902,6 +910,112 @@ export default function KlinesChartWrapper({ data, setData }) {
                     });
                 });
             });
+            break;
+
+          case 2:
+            console.log("2");
+
+            await Promise.all([
+              axios
+                .get(
+                  `https://api.bybit.com/v5/market/kline?category=linear&symbol=${symbol}&start=${
+                    t - 6600000
+                  }&end=${t - 600001}&interval=${
+                    convertIntervalsForBibyt[interval]
+                  }&limit=1000`
+                )
+                .then((res) => res.data.result.list.reverse()),
+              axios
+                .get(
+                  `https://api.bybit.com/v5/market/kline?category=linear&symbol=${symbol}&start=${
+                    t - 600000
+                  }&end=${t + 5400000}&interval=${
+                    convertIntervalsForBibyt[interval]
+                  }&limit=1000`
+                )
+                .then((res) => res.data.result.list.reverse()),
+            ]).then((r) => {
+              current = r.flat();
+
+              lastNewKlineTimestampRef.current = t + 5400000;
+              lastOldKlineTimestampRef.current = t - 6600000;
+              finishOldKlineTimestampRef.current = t - 2388900000;
+              finishNewKlineTimestampRef.current = new Date().getTime();
+
+              const key2 = keys.find((key) => key.exchange === 2);
+
+              axios
+                .get("https://api.bybit.com/v5/market/time")
+                .then(({ data }) => {
+                  axios
+                    .get(
+                      `https://api.bybit.com/v5/execution/list?category=linear&limit=100&startTime=${start}&endTime=${end}&symbol=${symbol}`,
+                      {
+                        headers: {
+                          "X-BAPI-SIGN": crypto
+                            .createHmac("sha256", key2.secret_key)
+                            .update(
+                              data.time +
+                                key2.api_key +
+                                60000 +
+                                `category=linear&limit=100&startTime=${start}&endTime=${end}&symbol=${symbol}`
+                            )
+                            .digest("hex"),
+                          "X-BAPI-API-KEY": key2.api_key,
+                          "X-BAPI-TIMESTAMP": data.time,
+                          "X-BAPI-RECV-WINDOW": 60000,
+                        },
+                      }
+                    )
+                    .then(({ data }) => {
+                      data.result.list.forEach((deal) => {
+                        const key = `${deal.side === "Buy" ? "BUY" : "SELL"}_${
+                          deal.execTime
+                        }`;
+
+                        const updatedAggDeals = {
+                          ...updatedAggDealsRef.current,
+                        };
+                        if (updatedAggDeals[key]) {
+                          updatedAggDeals[key].totalPrice +=
+                            parseFloat(deal.execPrice) *
+                            parseFloat(deal.execQty);
+                          updatedAggDeals[key].totalQty += parseFloat(
+                            deal.execQty
+                          );
+                          updatedAggDeals[key].avgPrice =
+                            updatedAggDeals[key].totalPrice /
+                            updatedAggDeals[key].totalQty;
+                        } else {
+                          updatedAggDeals[key] = {
+                            symbol: deal.symbol,
+                            side: deal.side === "Buy" ? "BUY" : "SELL",
+                            time: parseInt(deal.execTime),
+                            realizedPnl: parseFloat(deal.closedSize),
+                            totalPrice:
+                              parseFloat(deal.execPrice) *
+                              parseFloat(deal.execQty),
+                            totalQty: parseFloat(deal.execQty),
+                            avgPrice: parseFloat(deal.execPrice),
+                          };
+                        }
+                        updatedAggDealsRef.current = updatedAggDeals;
+                      });
+
+                      console.log("сделки для графика (bybit): ", data);
+
+                      aggDealsRef.current = Object.values(
+                        updatedAggDealsRef.current
+                      ).map((deal) => ({
+                        time: roundTimeToInterval(deal.time, interval),
+                        side: deal.side,
+                        price: deal.avgPrice,
+                        realizedPnl: deal.realizedPnl,
+                      }));
+                    });
+                });
+            });
+            break;
 
           default:
             break;
@@ -938,12 +1052,28 @@ export default function KlinesChartWrapper({ data, setData }) {
                         lastOldKlineTimestampRef.current - 33000000
                       }&endTime=${
                         lastOldKlineTimestampRef.current - 1
-                      }&interval=5m&limit=1500`
+                      }&interval=${interval}&limit=1500`
                     )
-                    .then(({ data }) => {
-                      uploadOldKlinesDataRef.current(data);
-                      lastOldKlineTimestampRef.current =
-                        lastOldKlineTimestampRef.current - 33000000;
+                    .then((r) => {
+                      uploadOldKlinesDataRef.current(r.data);
+                      lastOldKlineTimestampRef.current -= 33000000;
+                    });
+                  break;
+
+                case 2:
+                  await axios
+                    .get(
+                      `https://api.bybit.com/v5/market/kline?category=linear&symbol=${symbol}&start=${
+                        lastOldKlineTimestampRef.current - 33000000
+                      }&end=${lastOldKlineTimestampRef.current - 1}&interval=${
+                        convertIntervalsForBibyt[interval]
+                      }&limit=1000`
+                    )
+                    .then((r) => {
+                      uploadOldKlinesDataRef.current(
+                        r.data.result.list.reverse()
+                      );
+                      lastOldKlineTimestampRef.current -= 33000000;
                     });
                   break;
 
@@ -968,12 +1098,30 @@ export default function KlinesChartWrapper({ data, setData }) {
                         lastNewKlineTimestampRef.current + 1
                       }&endTime=${
                         lastNewKlineTimestampRef.current + 27000000
-                      }&interval=5m&limit=1500`
+                      }&interval=${interval}&limit=1500`
                     )
-                    .then(({ data }) => {
-                      uploadNewKlinesDataRef.current(data);
-                      lastNewKlineTimestampRef.current =
-                        lastNewKlineTimestampRef.current + 27000000;
+                    .then((r) => {
+                      uploadNewKlinesDataRef.current(r.data);
+                      lastNewKlineTimestampRef.current += 27000000;
+                    });
+                  break;
+
+                case 2:
+                  await axios
+                    .get(
+                      `https://api.bybit.com/v5/market/kline?category=linear&symbol=${symbol}&start=${
+                        lastNewKlineTimestampRef.current + 1
+                      }&end=${
+                        lastNewKlineTimestampRef.current + 27000000
+                      }&interval=${
+                        convertIntervalsForBibyt[interval]
+                      }&limit=1000`
+                    )
+                    .then((r) => {
+                      uploadNewKlinesDataRef.current(
+                        r.data.result.list.reverse()
+                      );
+                      lastNewKlineTimestampRef.current += 27000000;
                     });
                   break;
 
@@ -1131,10 +1279,30 @@ export default function KlinesChartWrapper({ data, setData }) {
                           lastOldKlineTimestampRef.current - 1
                         }&interval=${params}&limit=1500`
                       )
-                      .then(({ data }) => {
-                        uploadOldKlinesDataRef.current(data);
-                        lastOldKlineTimestampRef.current =
+                      .then((r) => {
+                        uploadOldKlinesDataRef.current(r.data);
+                        lastOldKlineTimestampRef.current -=
+                          subDataStartTimestaps[params];
+                      });
+                    break;
+
+                  case 2:
+                    await axios
+                      .get(
+                        `https://api.bybit.com/v5/market/kline?category=linear&symbol=${symbol}&start=${
                           lastOldKlineTimestampRef.current -
+                          subDataStartTimestaps[params]
+                        }&end=${
+                          lastOldKlineTimestampRef.current - 1
+                        }&interval=${
+                          convertIntervalsForBibyt[params]
+                        }&limit=1000`
+                      )
+                      .then((r) => {
+                        uploadOldKlinesDataRef.current(
+                          r.data.result.list.reverse()
+                        );
+                        lastOldKlineTimestampRef.current -=
                           subDataStartTimestaps[params];
                       });
                     break;
@@ -1163,10 +1331,30 @@ export default function KlinesChartWrapper({ data, setData }) {
                           mainDataEndTimestaps[params]
                         }&interval=${params}&limit=1500`
                       )
-                      .then(({ data }) => {
-                        uploadNewKlinesDataRef.current(data);
-                        lastNewKlineTimestampRef.current =
+                      .then((r) => {
+                        uploadNewKlinesDataRef.current(r.data);
+                        lastNewKlineTimestampRef.current +=
+                          mainDataEndTimestaps[params];
+                      });
+                    break;
+
+                  case 2:
+                    await axios
+                      .get(
+                        `https://api.bybit.com/v5/market/kline?category=linear&symbol=${symbol}&start=${
+                          lastNewKlineTimestampRef.current + 1
+                        }&end=${
                           lastNewKlineTimestampRef.current +
+                          mainDataEndTimestaps[params]
+                        }&interval=${
+                          convertIntervalsForBibyt[params]
+                        }&limit=1000`
+                      )
+                      .then((r) => {
+                        uploadNewKlinesDataRef.current(
+                          r.data.result.list.reverse()
+                        );
+                        lastNewKlineTimestampRef.current +=
                           mainDataEndTimestaps[params];
                       });
                     break;
@@ -1318,6 +1506,49 @@ export default function KlinesChartWrapper({ data, setData }) {
                           realizedPnl: deal.realizedPnl,
                         }));
                       });
+                      break;
+
+                    case 2:
+                      await Promise.all([
+                        axios
+                          .get(
+                            `https://api.bybit.com/v5/market/kline?category=linear&symbol=${symbol}&start=${
+                              t - subDataStartTimestaps[interval]
+                            }&end=${
+                              t - subDataEndTimestaps[interval]
+                            }&interval=${
+                              convertIntervalsForBibyt[interval]
+                            }&limit=1000`
+                          )
+                          .then((res) => res.data.result.list.reverse()),
+                        axios
+                          .get(
+                            `https://api.bybit.com/v5/market/kline?category=linear&symbol=${symbol}&start=${
+                              t - mainDataStartTimestaps[interval]
+                            }&end=${
+                              t + mainDataEndTimestaps[interval]
+                            }&interval=${
+                              convertIntervalsForBibyt[interval]
+                            }&limit=1000`
+                          )
+                          .then((res) => res.data.result.list.reverse()),
+                      ]).then((r) => {
+                        changeKlinesDataRef.current(r.flat());
+                        lastNewKlineTimestampRef.current =
+                          t + mainDataEndTimestaps[interval];
+                        lastOldKlineTimestampRef.current =
+                          t - subDataStartTimestaps[interval];
+                        aggDealsRef.current = Object.values(
+                          updatedAggDealsRef.current
+                        ).map((deal) => ({
+                          time: roundTimeToInterval(deal.time, interval),
+                          side: deal.side,
+                          price: deal.avgPrice,
+                          realizedPnl: deal.realizedPnl,
+                        }));
+                      });
+                      break;
+
                     default:
                       break;
                   }
