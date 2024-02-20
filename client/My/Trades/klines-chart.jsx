@@ -3,6 +3,8 @@
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import DialogContent from "@mui/material/DialogContent";
+import useMediaQuery from "@mui/material/useMediaQuery";
+import NativeSelect from "@mui/material/NativeSelect";
 import FormControl from "@mui/material/FormControl";
 import DialogTitle from "@mui/material/DialogTitle";
 import IconButton from "@mui/material/IconButton";
@@ -343,7 +345,7 @@ function roundTimeToInterval(dealTime, interval) {
 const LineFigure = getFigureClass("line");
 const TextFigure = getFigureClass("text");
 
-const KlinesChartCardOptionsMenu = memo(function KlinesChartCardOptionsMenu({
+const OptionsMenu = memo(function OptionsMenu({
   changeCandleTypeRef,
   showGridRef,
   setData,
@@ -384,13 +386,13 @@ const KlinesChartCardOptionsMenu = memo(function KlinesChartCardOptionsMenu({
         <DialogTitle sx={{ p: "24px" }}>Настройки</DialogTitle>
         <DialogContent sx={{ pr: 3, pl: 3 }}>
           <Grid container>
-            <Grid item xs={12} md={6}>
+            <Grid item xs={6} md={6}>
               <Typography variant="subtitle1" sx={{ mb: 5, mt: 2 }}>
                 Тип графика
               </Typography>
               <Typography variant="subtitle1">Показать сетку</Typography>
             </Grid>
-            <Grid item xs={0} md={6}>
+            <Grid item xs={6} md={6}>
               <Select
                 fullWidth
                 defaultValue={
@@ -436,13 +438,235 @@ const KlinesChartCardOptionsMenu = memo(function KlinesChartCardOptionsMenu({
   );
 });
 
-const KlinesChartHeaderIndicators = memo(function KlinesChartHeaderIndicators({
+const IntervalButtons = memo(function IntervalButtons({
+  t,
+  symbol,
+  interval,
+  exchange,
+  setInterval,
+  aggDealsRef,
+  updatedAggDealsRef,
+  subscribeActionRef,
+  changeKlinesDataRef,
+  unsubscribeActionRef,
+  lastNewKlineTimestampRef,
+  lastOldKlineTimestampRef,
+}) {
+  const isSmallScreen = useMediaQuery("(max-width:900px)");
+
+  return isSmallScreen ? (
+    <NativeSelect
+      value={interval}
+      onChange={(e) => {
+        const interval = e.target.value;
+        setInterval(interval);
+        (async () => {
+          unsubscribeActionRef.current();
+          switch (exchange) {
+            case 1:
+              await Promise.all([
+                axios.get(
+                  `https://fapi.binance.com/fapi/v1/klines?symbol=${symbol}&startTime=${
+                    t - subDataStartTimestaps[interval]
+                  }&endTime=${
+                    t - subDataEndTimestaps[interval]
+                  }&interval=${interval}&limit=1500`
+                ),
+                axios.get(
+                  `https://fapi.binance.com/fapi/v1/klines?symbol=${symbol}&startTime=${
+                    t - mainDataStartTimestaps[interval]
+                  }&endTime=${
+                    t + mainDataEndTimestaps[interval]
+                  }&interval=${interval}&limit=1500`
+                ),
+              ]).then((r) => {
+                changeKlinesDataRef.current([].concat(...r.map((r) => r.data)));
+                lastNewKlineTimestampRef.current =
+                  t + mainDataEndTimestaps[interval];
+                lastOldKlineTimestampRef.current =
+                  t - subDataStartTimestaps[interval];
+                aggDealsRef.current = Object.values(
+                  updatedAggDealsRef.current
+                ).map((deal) => ({
+                  time: roundTimeToInterval(deal.time, interval),
+                  side: deal.side,
+                  price: deal.avgPrice,
+                  realizedPnl: deal.realizedPnl,
+                }));
+              });
+              break;
+
+            case 2:
+              await Promise.all([
+                axios
+                  .get(
+                    `https://api.bybit.com/v5/market/kline?category=linear&symbol=${symbol}&start=${
+                      t - subDataStartTimestaps[interval]
+                    }&end=${t - subDataEndTimestaps[interval]}&interval=${
+                      convertIntervalsForBibyt[interval]
+                    }&limit=1000`
+                  )
+                  .then((res) => res.data.result.list.reverse()),
+                axios
+                  .get(
+                    `https://api.bybit.com/v5/market/kline?category=linear&symbol=${symbol}&start=${
+                      t - mainDataStartTimestaps[interval]
+                    }&end=${t + mainDataEndTimestaps[interval]}&interval=${
+                      convertIntervalsForBibyt[interval]
+                    }&limit=1000`
+                  )
+                  .then((res) => res.data.result.list.reverse()),
+              ]).then((r) => {
+                changeKlinesDataRef.current(r.flat());
+                lastNewKlineTimestampRef.current =
+                  t + mainDataEndTimestaps[interval];
+                lastOldKlineTimestampRef.current =
+                  t - subDataStartTimestaps[interval];
+                aggDealsRef.current = Object.values(
+                  updatedAggDealsRef.current
+                ).map((deal) => ({
+                  time: roundTimeToInterval(deal.time, interval),
+                  side: deal.side,
+                  price: deal.avgPrice,
+                  realizedPnl: deal.realizedPnl,
+                }));
+              });
+              break;
+
+            default:
+              break;
+          }
+          subscribeActionRef.current(interval);
+        })();
+      }}
+    >
+      <option value="1m" label="1м" />
+      <option value="3m" label="3м" />
+      <option value="5m" label="5м" />
+      <option value="30m" label="30м" />
+      <option value="1h" label="1ч" />
+      <option value="2h" label="2ч" />
+      <option value="6h" label="6ч" />
+      <option value="1d" label="1д" />
+      <option value="3d" label="3д" />
+      <option value="1w" label="1н" />
+      <option value="1M" label="1М" />
+    </NativeSelect>
+  ) : (
+    <FormControl>
+      <RadioGroup
+        row
+        value={interval}
+        onChange={(e) => {
+          const interval = e.target.value;
+          setInterval(interval);
+          (async () => {
+            unsubscribeActionRef.current();
+            switch (exchange) {
+              case 1:
+                await Promise.all([
+                  axios.get(
+                    `https://fapi.binance.com/fapi/v1/klines?symbol=${symbol}&startTime=${
+                      t - subDataStartTimestaps[interval]
+                    }&endTime=${
+                      t - subDataEndTimestaps[interval]
+                    }&interval=${interval}&limit=1500`
+                  ),
+                  axios.get(
+                    `https://fapi.binance.com/fapi/v1/klines?symbol=${symbol}&startTime=${
+                      t - mainDataStartTimestaps[interval]
+                    }&endTime=${
+                      t + mainDataEndTimestaps[interval]
+                    }&interval=${interval}&limit=1500`
+                  ),
+                ]).then((r) => {
+                  changeKlinesDataRef.current(
+                    [].concat(...r.map((r) => r.data))
+                  );
+                  lastNewKlineTimestampRef.current =
+                    t + mainDataEndTimestaps[interval];
+                  lastOldKlineTimestampRef.current =
+                    t - subDataStartTimestaps[interval];
+                  aggDealsRef.current = Object.values(
+                    updatedAggDealsRef.current
+                  ).map((deal) => ({
+                    time: roundTimeToInterval(deal.time, interval),
+                    side: deal.side,
+                    price: deal.avgPrice,
+                    realizedPnl: deal.realizedPnl,
+                  }));
+                });
+                break;
+
+              case 2:
+                await Promise.all([
+                  axios
+                    .get(
+                      `https://api.bybit.com/v5/market/kline?category=linear&symbol=${symbol}&start=${
+                        t - subDataStartTimestaps[interval]
+                      }&end=${t - subDataEndTimestaps[interval]}&interval=${
+                        convertIntervalsForBibyt[interval]
+                      }&limit=1000`
+                    )
+                    .then((res) => res.data.result.list.reverse()),
+                  axios
+                    .get(
+                      `https://api.bybit.com/v5/market/kline?category=linear&symbol=${symbol}&start=${
+                        t - mainDataStartTimestaps[interval]
+                      }&end=${t + mainDataEndTimestaps[interval]}&interval=${
+                        convertIntervalsForBibyt[interval]
+                      }&limit=1000`
+                    )
+                    .then((res) => res.data.result.list.reverse()),
+                ]).then((r) => {
+                  changeKlinesDataRef.current(r.flat());
+                  lastNewKlineTimestampRef.current =
+                    t + mainDataEndTimestaps[interval];
+                  lastOldKlineTimestampRef.current =
+                    t - subDataStartTimestaps[interval];
+                  aggDealsRef.current = Object.values(
+                    updatedAggDealsRef.current
+                  ).map((deal) => ({
+                    time: roundTimeToInterval(deal.time, interval),
+                    side: deal.side,
+                    price: deal.avgPrice,
+                    realizedPnl: deal.realizedPnl,
+                  }));
+                });
+                break;
+
+              default:
+                break;
+            }
+            subscribeActionRef.current(interval);
+          })();
+        }}
+      >
+        <FormControlLabel value="1m" control={<Radio />} label="1м" />
+        <FormControlLabel value="3m" control={<Radio />} label="3м" />
+        <FormControlLabel value="5m" control={<Radio />} label="5м" />
+        <FormControlLabel value="30m" control={<Radio />} label="30м" />
+        <FormControlLabel value="1h" control={<Radio />} label="1ч" />
+        <FormControlLabel value="2h" control={<Radio />} label="2ч" />
+        <FormControlLabel value="6h" control={<Radio />} label="6ч" />
+        <FormControlLabel value="1d" control={<Radio />} label="1д" />
+        <FormControlLabel value="3d" control={<Radio />} label="3д" />
+        <FormControlLabel value="1w" control={<Radio />} label="1н" />
+        <FormControlLabel value="1M" control={<Radio />} label="1М" />
+      </RadioGroup>
+    </FormControl>
+  );
+});
+
+const HeaderIndicators = memo(function HeaderIndicators({
   installMainIndicatorRef,
   removeMainIndicatorRef,
   installSubIndicatorRef,
   removeSubIndicatorRef,
   data,
 }) {
+  const isSmallScreen = useMediaQuery("(max-width:900px)");
+
   const [indicators, setIndicators] = useState([]);
   const [anchorEl, setAnchorEl] = useState(null);
 
@@ -452,16 +676,27 @@ const KlinesChartHeaderIndicators = memo(function KlinesChartHeaderIndicators({
 
   return (
     <>
-      <Button
-        variant="outlined"
-        color="inherit"
-        startIcon={<Iconify icon="solar:tuning-line-duotone" />}
-        onClick={(e) => {
-          setAnchorEl(e.currentTarget);
-        }}
-      >
-        Индикаторы
-      </Button>
+      {isSmallScreen ? (
+        <IconButton
+          onClick={(e) => {
+            setAnchorEl(e.currentTarget);
+          }}
+          sx={{ color: "text.secondary" }}
+        >
+          <Iconify icon="solar:tuning-line-duotone" />
+        </IconButton>
+      ) : (
+        <Button
+          variant="outlined"
+          color="inherit"
+          startIcon={<Iconify icon="solar:tuning-line-duotone" />}
+          onClick={(e) => {
+            setAnchorEl(e.currentTarget);
+          }}
+        >
+          Индикаторы
+        </Button>
+      )}
       <Menu
         open={Boolean(anchorEl)}
         anchorEl={anchorEl}
@@ -713,7 +948,7 @@ const KlinesChartHeaderIndicators = memo(function KlinesChartHeaderIndicators({
   );
 });
 
-export default function KlinesChartWrapper({ data, setData }) {
+export default function KlinesChart({ data, setData }) {
   const { keys } = useKeys();
 
   const [interval, setInterval] = useState("5m");
@@ -1463,120 +1698,28 @@ export default function KlinesChartWrapper({ data, setData }) {
           }}
         >
           <CardHeader title={symbol} />
-          <FormControl>
-            <RadioGroup
-              row
-              value={interval}
-              onChange={(e) => {
-                const interval = e.target.value;
-                setInterval(interval);
-                (async () => {
-                  unsubscribeActionRef.current();
-                  switch (exchange) {
-                    case 1:
-                      await Promise.all([
-                        axios.get(
-                          `https://fapi.binance.com/fapi/v1/klines?symbol=${symbol}&startTime=${
-                            t - subDataStartTimestaps[interval]
-                          }&endTime=${
-                            t - subDataEndTimestaps[interval]
-                          }&interval=${interval}&limit=1500`
-                        ),
-                        axios.get(
-                          `https://fapi.binance.com/fapi/v1/klines?symbol=${symbol}&startTime=${
-                            t - mainDataStartTimestaps[interval]
-                          }&endTime=${
-                            t + mainDataEndTimestaps[interval]
-                          }&interval=${interval}&limit=1500`
-                        ),
-                      ]).then((r) => {
-                        changeKlinesDataRef.current(
-                          [].concat(...r.map((r) => r.data))
-                        );
-                        lastNewKlineTimestampRef.current =
-                          t + mainDataEndTimestaps[interval];
-                        lastOldKlineTimestampRef.current =
-                          t - subDataStartTimestaps[interval];
-                        aggDealsRef.current = Object.values(
-                          updatedAggDealsRef.current
-                        ).map((deal) => ({
-                          time: roundTimeToInterval(deal.time, interval),
-                          side: deal.side,
-                          price: deal.avgPrice,
-                          realizedPnl: deal.realizedPnl,
-                        }));
-                      });
-                      break;
-
-                    case 2:
-                      await Promise.all([
-                        axios
-                          .get(
-                            `https://api.bybit.com/v5/market/kline?category=linear&symbol=${symbol}&start=${
-                              t - subDataStartTimestaps[interval]
-                            }&end=${
-                              t - subDataEndTimestaps[interval]
-                            }&interval=${
-                              convertIntervalsForBibyt[interval]
-                            }&limit=1000`
-                          )
-                          .then((res) => res.data.result.list.reverse()),
-                        axios
-                          .get(
-                            `https://api.bybit.com/v5/market/kline?category=linear&symbol=${symbol}&start=${
-                              t - mainDataStartTimestaps[interval]
-                            }&end=${
-                              t + mainDataEndTimestaps[interval]
-                            }&interval=${
-                              convertIntervalsForBibyt[interval]
-                            }&limit=1000`
-                          )
-                          .then((res) => res.data.result.list.reverse()),
-                      ]).then((r) => {
-                        changeKlinesDataRef.current(r.flat());
-                        lastNewKlineTimestampRef.current =
-                          t + mainDataEndTimestaps[interval];
-                        lastOldKlineTimestampRef.current =
-                          t - subDataStartTimestaps[interval];
-                        aggDealsRef.current = Object.values(
-                          updatedAggDealsRef.current
-                        ).map((deal) => ({
-                          time: roundTimeToInterval(deal.time, interval),
-                          side: deal.side,
-                          price: deal.avgPrice,
-                          realizedPnl: deal.realizedPnl,
-                        }));
-                      });
-                      break;
-
-                    default:
-                      break;
-                  }
-                  subscribeActionRef.current(interval);
-                })();
-              }}
-            >
-              <FormControlLabel value="1m" control={<Radio />} label="1м" />
-              <FormControlLabel value="3m" control={<Radio />} label="3м" />
-              <FormControlLabel value="5m" control={<Radio />} label="5м" />
-              <FormControlLabel value="30m" control={<Radio />} label="30м" />
-              <FormControlLabel value="1h" control={<Radio />} label="1ч" />
-              <FormControlLabel value="2h" control={<Radio />} label="2ч" />
-              <FormControlLabel value="6h" control={<Radio />} label="6ч" />
-              <FormControlLabel value="1d" control={<Radio />} label="1д" />
-              <FormControlLabel value="3d" control={<Radio />} label="3д" />
-              <FormControlLabel value="1w" control={<Radio />} label="1н" />
-              <FormControlLabel value="1M" control={<Radio />} label="1М" />
-            </RadioGroup>
-          </FormControl>
-          <KlinesChartHeaderIndicators
+          <IntervalButtons
+            t={t}
+            symbol={symbol}
+            interval={interval}
+            exchange={exchange}
+            setInterval={setInterval}
+            aggDealsRef={aggDealsRef}
+            updatedAggDealsRef={updatedAggDealsRef}
+            subscribeActionRef={subscribeActionRef}
+            changeKlinesDataRef={changeKlinesDataRef}
+            unsubscribeActionRef={unsubscribeActionRef}
+            lastNewKlineTimestampRef={lastNewKlineTimestampRef}
+            lastOldKlineTimestampRef={lastOldKlineTimestampRef}
+          />
+          <HeaderIndicators
             installMainIndicatorRef={installMainIndicatorRef}
             removeMainIndicatorRef={removeMainIndicatorRef}
             installSubIndicatorRef={installSubIndicatorRef}
             removeSubIndicatorRef={removeSubIndicatorRef}
             data={data}
           />
-          <KlinesChartCardOptionsMenu
+          <OptionsMenu
             changeCandleTypeRef={changeCandleTypeRef}
             showGridRef={showGridRef}
             setData={setData}

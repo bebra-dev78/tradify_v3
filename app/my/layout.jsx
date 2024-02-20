@@ -41,7 +41,9 @@ export default function MyLayout({ children }) {
     setStretch(JSON.parse(localStorage.getItem("stretch")) ?? true);
   }, []);
 
-  if (Object.keys(user).length > 0) {
+  if (user === null) {
+    router.push("/login");
+  } else if (Object.keys(user).length > 0) {
     return (
       <>
         <Header
@@ -128,8 +130,6 @@ export default function MyLayout({ children }) {
         </Box>
       </>
     );
-  } else if (user === null) {
-    router.push("/login");
   }
 }
 
