@@ -25,9 +25,9 @@ export default function RootLayout({ children }) {
     <html lang="ru">
       <body className={inter.className} data-theme="dark">
         <AppRouterCacheProvider>
-          <ThemeRegistry>
-            <AuthProvider>{children}</AuthProvider>
-          </ThemeRegistry>
+          <AuthProvider>
+            <ThemeRegistry>{children}</ThemeRegistry>
+          </AuthProvider>
         </AppRouterCacheProvider>
         <Script id="metrika-counter" strategy="afterInteractive">
           {`(function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};

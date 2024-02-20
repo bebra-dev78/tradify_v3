@@ -17,107 +17,59 @@ export default function AccountLink({ username, keys }) {
   const [balance, setBalance] = useState(0);
 
   useEffect(() => {
-    const key1 = keys.filter((key) => key.exchange === 1)[0];
-    const key2 = keys.filter((key) => key.exchange === 2)[0];
-    switch (true) {
-      case keys.length === 1 && key1 !== undefined:
-        axios.get("https://fapi.binance.com/fapi/v1/time").then(({ data }) => {
-          axios
-            .get("https://fapi.binance.com/fapi/v2/account", {
+    const key1 = keys.find((key) => key.exchange === 1);
+    const key2 = keys.find((key) => key.exchange === 2);
+
+    setBalance(0);
+
+    if (key1 !== undefined) {
+      axios.get("https://fapi.binance.com/fapi/v1/time").then(({ data }) => {
+        axios
+          .get("https://fapi.binance.com/fapi/v2/account", {
+            headers: {
+              "X-MBX-APIKEY": key1.api_key,
+            },
+            params: {
+              timestamp: data.serverTime,
+              signature: crypto
+                .createHmac("sha256", key1.secret_key)
+                .update(`timestamp=${data.serverTime}&recvWindow=60000`)
+                .digest("hex"),
+              recvWindow: 60000,
+            },
+          })
+          .then(({ data }) => {
+            setBalance((prev) => (prev += parseFloat(data.totalWalletBalance)));
+          });
+      });
+    }
+
+    if (key2 !== undefined) {
+      axios.get("https://api.bybit.com/v5/market/time").then(({ data }) => {
+        axios
+          .get(
+            "https://api.bybit.com/v5/account/wallet-balance?accountType=UNIFIED",
+            {
               headers: {
-                "X-MBX-APIKEY": key1.api_key,
-              },
-              params: {
-                timestamp: data.serverTime,
-                signature: crypto
-                  .createHmac("sha256", key1.secret_key)
-                  .update(`timestamp=${data.serverTime}&recvWindow=60000`)
+                "X-BAPI-SIGN": crypto
+                  .createHmac("sha256", key2.secret_key)
+                  .update(
+                    data.time + key2.api_key + 60000 + "accountType=UNIFIED"
+                  )
                   .digest("hex"),
-                recvWindow: 60000,
+                "X-BAPI-API-KEY": key2.api_key,
+                "X-BAPI-TIMESTAMP": data.time,
+                "X-BAPI-RECV-WINDOW": 60000,
               },
-            })
-            .then(({ data }) => {
-              setBalance(parseFloat(data.totalWalletBalance));
-            });
-        });
-        break;
-
-      case keys.length === 1 && key2 !== undefined:
-        axios.get("https://api.bybit.com/v5/market/time").then(({ data }) => {
-          axios
-            .get(
-              "https://api.bybit.com/v5/account/wallet-balance?accountType=UNIFIED",
-              {
-                headers: {
-                  "X-BAPI-SIGN": crypto
-                    .createHmac("sha256", key2.secret_key)
-                    .update(
-                      data.time + key2.api_key + 60000 + "accountType=UNIFIED"
-                    )
-                    .digest("hex"),
-                  "X-BAPI-API-KEY": key2.api_key,
-                  "X-BAPI-TIMESTAMP": data.time,
-                  "X-BAPI-RECV-WINDOW": 60000,
-                },
-              }
-            )
-            .then(({ data }) => {
-              setBalance(parseFloat(data.result.list[0].totalWalletBalance));
-            });
-        });
-        break;
-
-      case keys.length === 2:
-        (async () => {
-          const binanceTime = await axios
-            .get("https://fapi.binance.com/fapi/v1/time")
-            .then(({ data }) => data.serverTime);
-          const bybitTime = await axios
-            .get("https://api.bybit.com/v5/market/time")
-            .then(({ data }) => data.time);
-          const [b1, b2] = await Promise.all([
-            axios
-              .get("https://fapi.binance.com/fapi/v2/account", {
-                headers: {
-                  "X-MBX-APIKEY": key1.api_key,
-                },
-                params: {
-                  timestamp: binanceTime,
-                  signature: crypto
-                    .createHmac("sha256", key1.secret_key)
-                    .update(`timestamp=${binanceTime}&recvWindow=60000`)
-                    .digest("hex"),
-                  recvWindow: 60000,
-                },
-              })
-              .then(({ data }) => data),
-            axios.get(
-              "https://api.bybit.com/v5/account/wallet-balance?accountType=UNIFIED",
-              {
-                headers: {
-                  "X-BAPI-SIGN": crypto
-                    .createHmac("sha256", key2.secret_key)
-                    .update(
-                      bybitTime + key2.api_key + 60000 + "accountType=UNIFIED"
-                    )
-                    .digest("hex"),
-                  "X-BAPI-API-KEY": key2.api_key,
-                  "X-BAPI-TIMESTAMP": bybitTime,
-                  "X-BAPI-RECV-WINDOW": 60000,
-                },
-              }
-            ),
-          ]);
-          setBalance(
-            parseFloat(b1.totalWalletBalance) +
-              parseFloat(b2.data.result.list[0].totalWalletBalance)
-          );
-        })();
-        break;
-
-      default:
-        setBalance(0);
-        break;
+            }
+          )
+          .then(({ data }) => {
+            setBalance(
+              (prev) =>
+                (prev += parseFloat(data.result.list[0].totalWalletBalance))
+            );
+          });
+      });
     }
   }, [keys]);
 

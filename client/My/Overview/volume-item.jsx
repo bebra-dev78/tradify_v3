@@ -12,6 +12,8 @@ import { useMemo } from "react";
 
 import Iconify from "#/utils/iconify";
 
+import useFormat from "#/utils/format-thousands";
+
 export default function VolumeItem({ trades }) {
   const [current, diff] = useMemo(() => {
     if (trades !== null) {
@@ -33,7 +35,7 @@ export default function VolumeItem({ trades }) {
         })
         .reduce((acc, trade) => acc + parseFloat(trade.volume), 0);
 
-      return [counter.toFixed(0), (counter - subCounter).toFixed(0)];
+      return [useFormat(counter.toFixed(0)), (counter - subCounter).toFixed(0)];
     } else {
       return [0, 0];
     }
@@ -81,14 +83,14 @@ export default function VolumeItem({ trades }) {
                 variant="subtitle2"
                 sx={{ color: "error.main", cursor: "default" }}
               >
-                {diff}$
+                {useFormat(diff)}$
               </Typography>
             ) : (
               <Typography
                 variant="subtitle2"
                 sx={{ color: "success.main", cursor: "default" }}
               >
-                +{diff}$
+                +{useFormat(diff)}$
               </Typography>
             )}
           </Tooltip>

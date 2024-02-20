@@ -41,99 +41,95 @@ export default function MyLayout({ children }) {
     setStretch(JSON.parse(localStorage.getItem("stretch")) ?? true);
   }, []);
 
-  switch (true) {
-    case user === null:
-      router.push("/login");
-      break;
-    case Object.keys(user).length > 0:
-      return (
-        <>
-          <Header
-            keys={keys}
-            id={user.id}
-            stretch={stretch}
-            email={user.email}
-            unread={user.unread}
-            username={user.name}
-            setStretch={setStretch}
-            openSidebar={openSidebar}
-          />
+  if (Object.keys(user).length > 0) {
+    return (
+      <>
+        <Header
+          keys={keys}
+          id={user.id}
+          stretch={stretch}
+          email={user.email}
+          unread={user.unread}
+          username={user.name}
+          setStretch={setStretch}
+          openSidebar={openSidebar}
+        />
+        <Box
+          sx={{
+            "@media (min-width: 1200px)": {
+              display: "flex",
+              minHeight: "100%",
+            },
+          }}
+        >
           <Box
+            component="nav"
             sx={{
               "@media (min-width: 1200px)": {
-                display: "flex",
-                minHeight: "100%",
+                flexShrink: 0,
+                width: openSidebar ? "280px" : "90px",
+              },
+            }}
+          >
+            {isBigScreen &&
+              (openSidebar ? (
+                <FullDesktopNav
+                  setOpenSidebar={setOpenSidebar}
+                  username={user.name}
+                  keys={keys}
+                />
+              ) : (
+                <MiniDesktopNav setOpenSidebar={setOpenSidebar} />
+              ))}
+          </Box>
+          <Box
+            component="main"
+            sx={{
+              flexGrow: 1,
+              "@media (min-width: 1200px)": {
+                pl: "16px",
+                pr: "16px",
+                pt: "100px",
+                width: "calc(100% - 280px)",
+                pb: "calc(76px + env(safe-area-inset-bottom))",
+              },
+              "@media (max-width: 1200px)": {
+                pt: "calc(72px + env(safe-area-inset-top))",
+                pb: "calc(72px + env(safe-area-inset-top))",
               },
             }}
           >
             <Box
-              component="nav"
               sx={{
-                "@media (min-width: 1200px)": {
-                  flexShrink: 0,
-                  width: openSidebar ? "280px" : "90px",
+                mr: "auto",
+                ml: "auto",
+                pl: "16px",
+                pr: "16px",
+                width: "100%",
+                display: "block",
+                boxSizing: "border-box",
+                "@media (min-width: 600px)": {
+                  pl: "24px",
+                  pr: "24px",
+                },
+                "@media (min-width: 1600px)": {
+                  maxWidth: stretch ? "1600px" : "100%",
                 },
               }}
             >
-              {isBigScreen &&
-                (openSidebar ? (
-                  <FullDesktopNav
-                    setOpenSidebar={setOpenSidebar}
-                    username={user.name}
-                    keys={keys}
-                  />
-                ) : (
-                  <MiniDesktopNav setOpenSidebar={setOpenSidebar} />
-                ))}
+              <UserContext.Provider value={{ user, setUser }}>
+                <KeysContext.Provider value={{ keys, setKeys }}>
+                  {children}
+                </KeysContext.Provider>
+              </UserContext.Provider>
             </Box>
-            <Box
-              component="main"
-              sx={{
-                flexGrow: 1,
-                "@media (min-width: 1200px)": {
-                  pl: "16px",
-                  pr: "16px",
-                  pt: "100px",
-                  width: "calc(100% - 280px)",
-                  pb: "calc(76px + env(safe-area-inset-bottom))",
-                },
-                "@media (max-width: 1200px)": {
-                  pt: "calc(72px + env(safe-area-inset-top))",
-                  pb: "calc(72px + env(safe-area-inset-top))",
-                },
-              }}
-            >
-              <Box
-                sx={{
-                  mr: "auto",
-                  ml: "auto",
-                  pl: "16px",
-                  pr: "16px",
-                  width: "100%",
-                  display: "block",
-                  boxSizing: "border-box",
-                  "@media (min-width: 600px)": {
-                    pl: "24px",
-                    pr: "24px",
-                  },
-                  "@media (min-width: 1600px)": {
-                    maxWidth: stretch ? "1600px" : "100%",
-                  },
-                }}
-              >
-                <UserContext.Provider value={{ user, setUser }}>
-                  <KeysContext.Provider value={{ keys, setKeys }}>
-                    {children}
-                  </KeysContext.Provider>
-                </UserContext.Provider>
-              </Box>
-            </Box>
-            {isSmallScreen && <BottomNav />}
           </Box>
-        </>
-      );
-    default:
-      return null;
+          {isSmallScreen && <BottomNav />}
+        </Box>
+      </>
+    );
+  } else if (user === null) {
+    router.push("/login");
   }
 }
 
