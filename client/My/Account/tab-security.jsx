@@ -3,7 +3,11 @@
 import InputAdornment from "@mui/material/InputAdornment";
 import LoadingButton from "@mui/lab/LoadingButton";
 import IconButton from "@mui/material/IconButton";
+import Typography from "@mui/material/Typography";
 import TextField from "@mui/material/TextField";
+import Stack from "@mui/material/Stack";
+import Grid from "@mui/material/Grid";
+import Card from "@mui/material/Card";
 
 import { useState, useRef } from "react";
 import bcrypt from "bcryptjs";
@@ -13,7 +17,7 @@ import { updatePassword } from "#/server/users";
 import { useUser } from "#/app/my/layout";
 import Iconify from "#/utils/iconify";
 
-export default function TabSecurity() {
+function Form() {
   const { user, setUser } = useUser();
 
   const [showSuccessSnackbar, setShowSuccessSnackbar] = useState(false);
@@ -208,5 +212,22 @@ export default function TabSecurity() {
         setShowSuccessSnackbar={setShowSuccessSnackbar}
       />
     </>
+  );
+}
+
+export default function TabSecurity() {
+  return (
+    <Grid container spacing={3} sx={{ flexFlow: "wrap" }}>
+      <Grid item xs={12} md={8}>
+        <Card sx={{ p: 3 }}>
+          <Typography variant="h6" paragraph sx={{ color: "text.primary" }}>
+            Изменить пароль
+          </Typography>
+          <Stack sx={{ gap: 3, alignItems: "flex-end" }}>
+            <Form />
+          </Stack>
+        </Card>
+      </Grid>
+    </Grid>
   );
 }

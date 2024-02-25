@@ -55,7 +55,6 @@ model Keys {
   secret_key String
   title      String   @db.TinyText
   exchange   Int      @db.TinyInt()
-  activate   Boolean  @default(true)
   Trades     Trades[] @relation("kid")
 
   UO Users @relation("uid", fields: [uid], references: [id])
@@ -64,25 +63,26 @@ model Keys {
 }
 
 model Trades {
-  id              Int    @id @default(autoincrement())
+  id              Int     @id @default(autoincrement())
   uid             String
   kid             String
-  exchange        Int    @db.TinyInt()
-  symbol          String @db.TinyText
+  exchange        Int     @db.TinyInt()
+  symbol          String  @db.TinyText
   tags            Json?
-  rating          Int?   @db.TinyInt()
-  entry_time      String @db.TinyText
-  exit_time       String @db.TinyText
+  rating          Int?    @db.TinyInt()
+  entry_time      String  @db.TinyText
+  exit_time       String  @db.TinyText
+  leverage        String? @db.TinyText
   side            Side
-  procent         String @db.TinyText
-  income          String @db.TinyText
-  turnover        String @db.TinyText
-  max_volume      String @db.TinyText
-  volume          String @db.TinyText
-  comission       String @db.TinyText
-  avg_entry_price String @db.TinyText
-  avg_exit_price  String @db.TinyText
-  duration        String @db.TinyText
+  procent         String  @db.TinyText
+  income          String  @db.TinyText
+  turnover        String  @db.TinyText
+  max_volume      String  @db.TinyText
+  volume          String  @db.TinyText
+  comission       String  @db.TinyText
+  avg_entry_price String  @db.TinyText
+  avg_exit_price  String  @db.TinyText
+  duration        String  @db.TinyText
 
   UO Users @relation("uid", fields: [uid], references: [id])
   KO Keys  @relation("kid", fields: [kid], references: [id])

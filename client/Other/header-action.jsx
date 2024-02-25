@@ -14,6 +14,8 @@ export default function HeaderAction({ username, email }) {
 
   const [anchorEl, setAnchorEl] = useState(null);
 
+  const open = Boolean(anchorEl);
+
   return (
     <>
       <IconButton
@@ -21,15 +23,31 @@ export default function HeaderAction({ username, email }) {
           setAnchorEl(e.currentTarget);
         }}
         sx={{
-          width: "40px",
-          height: "40px",
+          width: "39.5px",
+          height: "39.5px",
+        }}
+        style={{
+          background: open
+            ? "linear-gradient(135deg, rgb(91, 228, 155) 0%, rgb(0, 167, 111) 100%)"
+            : "rgba(145, 158, 171, 0.08)",
         }}
       >
-        <Avatar>{username?.charAt(0).toUpperCase()}</Avatar>
+        <Avatar
+          sx={{
+            width: "36px",
+            height: "36px",
+            "&:hover": {
+              borderRadius: "16px",
+            },
+          }}
+        >
+          {username?.charAt(0).toUpperCase()}
+        </Avatar>
       </IconButton>
       <Popover
-        open={Boolean(anchorEl)}
+        open={open}
         anchorEl={anchorEl}
+        disableScrollLock
         anchorOrigin={{
           vertical: "bottom",
         }}

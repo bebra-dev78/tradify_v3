@@ -10,9 +10,12 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { TimeLastNews, ButtonToNews } from "#/client/My/Overview/last-news";
-import GridWrapperItems from "#/client/My/Overview/grid-wrapper-items";
 import InviteItemButton from "#/client/My/Overview/invite-item-button";
+import StatisticsItem from "#/client/My/Overview/statistics-item";
+import CommissionItem from "#/client/My/Overview/commission-item";
 import WelcomeItem from "#/client/My/Overview/welcome-item";
+import VolumeItem from "#/client/My/Overview/volume-item";
+import ProfitItem from "#/client/My/Overview/profit-item";
 import Iconify from "#/utils/iconify";
 
 import woman_2 from "#/public/images/woman_2.png";
@@ -35,11 +38,22 @@ export default function Overview() {
     >
       <WelcomeItem />
       <Grid container spacing={3} sx={{ flexFlow: "wrap" }}>
-        <GridWrapperItems />
+        <Grid item xs={12} md={4}>
+          <ProfitItem />
+        </Grid>
+        <Grid item xs={12} md={4}>
+          <CommissionItem />
+        </Grid>
+        <Grid item xs={12} md={4}>
+          <VolumeItem />
+        </Grid>
+        <Grid item xs={12} md={12} xl={12}>
+          <StatisticsItem />
+        </Grid>
         <Grid item xs={12} md={6} xl={6}>
           <Card>
             <CardHeader
-              title="Обновление 0.3.0"
+              title="Обновление 0.4.0"
               subheader={
                 <Typography
                   variant="caption"
@@ -71,17 +85,19 @@ export default function Overview() {
                   textOverflow: "ellipsis",
                 }}
               >
-                Доброго времени суток, партнёры!
+                Доброго времени суток, партнёры! В этом обновлении мы немного
+                поработали над улучшением UX нашего сервиса:
                 <br />
+                <br />• В инструментах наложений свечного графика была добавлена
+                «линейка» — она позволяет узнать изменение цены в абсолютном и
+                процентном соотношениях.
                 <br />
-                Сервис был полноценно адаптирован к бирже ByBit, а именно — к
-                linear фьючерсам. Теперь можно загрузить историю этих сделок за
-                последний месяц и посмотреть их на свечном графике. В будущем мы
-                планируем добавить больше бирж и их типы торговли.
+                <br />• На странице аккаунта теперь срабатывает мягкая анимация
+                при перемещении между вкладками.
                 <br />
-                <br />
-                Также была улучшена адаптивность таблицы сделок и свечного
-                графика на мобильных устройствах.
+                <br />• Теперь большинство переиспользуемых данных кешируются
+                прямо на клиенте, благодаря чему можно перемещаться по страницам
+                панели управления практически без загрузок.
               </Typography>
               <Link href="/my/news">
                 <ButtonToNews />

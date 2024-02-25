@@ -297,17 +297,6 @@ export async function createDefaultTrades(data) {
   }
 }
 
-export async function getTrades(uid) {
-  try {
-    return await prisma.trades.findMany({
-      where: { uid },
-    });
-  } catch (e) {
-    console.log("Какая-то хуйня в функции getTrades: ", e);
-    return [];
-  }
-}
-
 export async function updateRating(id, rating) {
   try {
     await prisma.trades.update({

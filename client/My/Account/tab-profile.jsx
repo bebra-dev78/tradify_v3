@@ -3,16 +3,50 @@
 import LoadingButton from "@mui/lab/LoadingButton";
 import Typography from "@mui/material/Typography";
 import TextField from "@mui/material/TextField";
+import Avatar from "@mui/material/Avatar";
 import Stack from "@mui/material/Stack";
+import Grid from "@mui/material/Grid";
+import Card from "@mui/material/Card";
 import Box from "@mui/material/Box";
 
-import { useState, useRef } from "react";
+import { useState, useRef, memo } from "react";
 
 import SuccessSnackbar from "#/client/Shared/snackbar-success";
 import { updateUser } from "#/server/users";
 import { useUser } from "#/app/my/layout";
 
-export default function TabProfileUserEditItem() {
+const AvatarItem = memo(function AvatarItem() {
+  const { user } = useUser();
+
+  return (
+    <>
+      <Avatar
+        sx={{
+          m: "auto",
+          width: "115px",
+          height: "115px",
+          fontSize: "3.5rem",
+        }}
+      >
+        {user.name?.charAt(0).toUpperCase()}
+      </Avatar>
+      <Typography
+        variant="body2"
+        sx={{
+          color: "text.secondary",
+          m: "21px auto 0",
+        }}
+      >
+        {user.email ?? "."}
+      </Typography>
+      <Typography variant="subtitle1">
+        {user.name ?? "."} {user.surname}
+      </Typography>
+    </>
+  );
+});
+
+const EditItem = memo(function EditItem() {
   const { user, setUser } = useUser();
 
   const [showSuccessSnackbar, setShowSuccessSnackbar] = useState(false);
@@ -150,5 +184,28 @@ export default function TabProfileUserEditItem() {
         setShowSuccessSnackbar={setShowSuccessSnackbar}
       />
     </>
+  );
+});
+
+export default function TabProfile() {
+  return (
+    <Grid container spacing={3} sx={{ flexFlow: "wrap" }}>
+      <Grid item xs={12} md={4}>
+        <Card>
+          <Stack sx={{ p: "48px 24px", textAlign: "center" }}>
+            <AvatarItem />
+          </Stack>
+        </Card>
+      </Grid>
+      <Grid item xs={12} md={8}>
+        <Card
+          sx={{
+            p: "24px",
+          }}
+        >
+          <EditItem />
+        </Card>
+      </Grid>
+    </Grid>
   );
 }

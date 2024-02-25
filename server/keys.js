@@ -18,16 +18,6 @@ export async function createKey(uid, api_key, secret_key, title, exchange) {
   }
 }
 
-export async function getKeys(uid) {
-  try {
-    return await prisma.keys.findMany({
-      where: { uid },
-    });
-  } catch (e) {
-    return null;
-  }
-}
-
 export async function updateTitle(id, title) {
   try {
     await prisma.keys.update({

@@ -13,16 +13,20 @@ import moment from "moment";
 
 import Iconify from "#/utils/iconify";
 
-export default memo(function CounterOfTrades({ trades, handleDeleteWidget }) {
+export default memo(function CounterOfTrades({
+  data,
+  isLoading,
+  handleDeleteWidget,
+}) {
   const theme = useTheme();
 
   const counter = useMemo(() => {
-    if (trades !== null) {
+    if (data) {
       const s = {};
       const d = Array.from({ length: 7 }, (_, i) =>
         moment().subtract(i, "days").format("YYYY-MM-DD")
       );
-      trades
+      data
         .filter((trade) =>
           moment(parseInt(trade.entry_time)).isAfter(
             moment().subtract(7, "days")
@@ -46,9 +50,11 @@ export default memo(function CounterOfTrades({ trades, handleDeleteWidget }) {
     } else {
       return [];
     }
-  }, [trades]);
+  }, [data]);
 
-  return counter.length > 0 ? (
+  return isLoading ? (
+    <Skeleton sx={{ height: "100%" }} />
+  ) : (
     <Card sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
       <CardHeader
         title="Счетчик сделок"
@@ -194,7 +200,5 @@ export default memo(function CounterOfTrades({ trades, handleDeleteWidget }) {
         }}
       />
     </Card>
-  ) : (
-    <Skeleton animation="wave" sx={{ height: "100%" }} />
   );
 });

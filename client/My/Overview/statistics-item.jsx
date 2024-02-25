@@ -10,18 +10,21 @@ import Stack from "@mui/material/Stack";
 import Card from "@mui/material/Card";
 import Box from "@mui/material/Box";
 
+import useSWRImmutable from "swr/immutable";
 import { useState, useMemo } from "react";
 import Chart from "react-apexcharts";
 import moment from "moment";
 
 import Iconify from "#/utils/iconify";
 
-export default function StatisticsItem({ trades }) {
+export default function StatisticsItem() {
+  const { data, isLoading } = useSWRImmutable("null");
+
   const [openInfo, setOpenInfo] = useState(false);
 
   const counter = useMemo(() => {
-    if (trades !== null) {
-      const filteredTrades = trades.filter((trade) => {
+    if (data) {
+      const filteredTrades = data.filter((trade) => {
         const entryTime = parseInt(trade.entry_time);
         const lastWeekTimestamp = moment().subtract(7, "days").valueOf();
         return entryTime >= lastWeekTimestamp;
@@ -85,7 +88,7 @@ export default function StatisticsItem({ trades }) {
         cumulativeIncome: 0,
       };
     }
-  }, [trades]);
+  }, [data]);
 
   const categories = useMemo(
     () => [
@@ -114,7 +117,9 @@ export default function StatisticsItem({ trades }) {
     []
   );
 
-  return trades !== null ? (
+  return isLoading ? (
+    <Skeleton sx={{ height: 592 }} />
+  ) : (
     <Card>
       <CardHeader
         title="Статистика за неделю"
@@ -216,7 +221,8 @@ export default function StatisticsItem({ trades }) {
               strokeColors: "rgba(22, 28, 36, 0.8)",
             },
             yaxis: {
-              max: trades?.length === 0 ? 5 : undefined,
+              max: data.length === 0 ? 5 : undefined,
+              min: data.length === 0 ? 0 : undefined,
               labels: {
                 style: {
                   colors: "#637381",
@@ -364,7 +370,5 @@ export default function StatisticsItem({ trades }) {
         </Box>
       </Stack>
     </Card>
-  ) : (
-    <Skeleton animation="wave" sx={{ height: 592 }} />
   );
 }

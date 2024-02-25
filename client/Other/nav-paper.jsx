@@ -17,6 +17,7 @@ import AccountLink from "#/client/Other/account-link";
 import AppLogo from "#/client/Shared/app-logo";
 
 import illustration_docs from "#/public/svg/illustration_docs.svg";
+
 import "simplebar-react/dist/simplebar.min.css";
 
 export default function NavPaper({ username, keys }) {

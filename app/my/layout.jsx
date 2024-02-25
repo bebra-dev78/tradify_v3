@@ -6,11 +6,10 @@ import Box from "@mui/material/Box";
 import { useState, useEffect, useContext, createContext } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
-import axios from "axios";
+import { SWRConfig } from "swr";
 
 import FullDesktopNav from "#/client/My/full-desktop-nav";
 import MiniDesktopNav from "#/client/My/mini-desktop-nav";
-import { getKeys } from "#/server/keys";
 import Header from "#/client/My/header";
 
 const BottomNav = dynamic(() => import("#/client/My/bottom-nav"));
@@ -25,25 +24,27 @@ export default function MyLayout({ children }) {
 
   const [openSidebar, setOpenSidebar] = useState(true);
   const [stretch, setStretch] = useState(true);
-  const [user, setUser] = useState({});
-  const [keys, setKeys] = useState([]);
+  const [user, setUser] = useState(null);
+  const [keys, setKeys] = useState(null);
 
   useEffect(() => {
-    axios.get("/api/bebra").then(({ data }) => {
-      setUser(data);
-      if (data) {
-        getKeys(data.id).then((k) => {
-          setKeys(k);
-        });
-      }
-    });
+    fetch("/api/bebra")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data === null) {
+          setUser(false);
+        } else {
+          setUser(data[0]);
+          setKeys(data[1]);
+        }
+      });
     setOpenSidebar(JSON.parse(localStorage.getItem("sidebar")) ?? true);
     setStretch(JSON.parse(localStorage.getItem("stretch")) ?? true);
   }, []);
 
-  if (user === null) {
+  if (user === false) {
     router.push("/login");
-  } else if (Object.keys(user).length > 0) {
+  } else if (user !== null) {
     return (
       <>
         <Header
@@ -121,7 +122,16 @@ export default function MyLayout({ children }) {
             >
               <UserContext.Provider value={{ user, setUser }}>
                 <KeysContext.Provider value={{ keys, setKeys }}>
-                  {children}
+                  <SWRConfig
+                    value={{
+                      fetcher: () =>
+                        fetch(`/api/aboba?uid=${user.id}`).then((res) =>
+                          res.json()
+                        ),
+                    }}
+                  >
+                    {children}
+                  </SWRConfig>
                 </KeysContext.Provider>
               </UserContext.Provider>
             </Box>

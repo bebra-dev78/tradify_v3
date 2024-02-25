@@ -49,6 +49,8 @@ import {
 } from "@mui/x-data-grid";
 
 import { useState, useEffect, useRef, useMemo, memo } from "react";
+import useSWRImmutable from "swr/immutable";
+import { useSWRConfig } from "swr";
 import { DateTime } from "luxon";
 import Image from "next/image";
 import crypto from "crypto";
@@ -59,10 +61,9 @@ import { useMode } from "#/client/Global/theme-registry";
 import { useKeys, useUser } from "#/app/my/layout";
 import Iconify from "#/utils/iconify";
 import {
-  getTrades,
+  updateTags,
   deleteTrades,
   updateRating,
-  updateTags,
   updateDefaultTrade,
   createDefaultTrades,
 } from "#/server/trades";
@@ -214,9 +215,17 @@ const CustomColumnMenu = memo(function CustomColumnMenu({ hideMenu, colDef }) {
   return (
     <GridColumnMenuContainer hideMenu={hideMenu} colDef={colDef}>
       <GridColumnMenuSortItem onClick={hideMenu} colDef={colDef} />
-      <Divider />
+      <Divider
+        sx={{
+          borderStyle: "solid",
+        }}
+      />
       <GridColumnMenuFilterItem onClick={hideMenu} colDef={colDef} />
-      <Divider />
+      <Divider
+        sx={{
+          borderStyle: "solid",
+        }}
+      />
       <GridColumnMenuHideItem onClick={hideMenu} colDef={colDef} />
       <GridColumnMenuManageItem onClick={hideMenu} colDef={colDef} />
     </GridColumnMenuContainer>
@@ -579,8 +588,9 @@ const DealActions = memo(function DealActions({ apiRef, hidden }) {
     <>
       <Backdrop open={open} />
       <SpeedDial
+        open={open}
+        hidden={hidden}
         ariaLabel="SpeedDial"
-        sx={{ position: "fixed", bottom: 40, right: 40 }}
         icon={
           <SpeedDialIcon
             openIcon={<Iconify icon="solar:widget-6-bold-duotone" />}
@@ -602,8 +612,7 @@ const DealActions = memo(function DealActions({ apiRef, hidden }) {
             },
           },
         }}
-        hidden={hidden}
-        open={open}
+        sx={{ position: "fixed", bottom: 40, right: 40 }}
       >
         <SpeedDialAction
           icon={
@@ -648,6 +657,7 @@ const DealActions = memo(function DealActions({ apiRef, hidden }) {
             });
 
             trades.sort((a, b) => a.entryTime - b.entryTime);
+
             const lastTrade = trades[0];
             const firstTrade = trades[trades.length - 1];
 
@@ -660,75 +670,20 @@ const DealActions = memo(function DealActions({ apiRef, hidden }) {
               )
             ) {
               setShowFailSnackbar(true);
-            } else {
-              const ids = trades
-                .map((trade) => trade.id)
-                .filter((t) => t !== firstTrade.id);
+              return;
+            }
+            const ids = trades
+              .map((trade) => trade.id)
+              .filter((t) => t !== firstTrade.id);
 
-              ids.forEach((id) => {
-                apiRef.current.updateRows([{ id, _action: "delete" }]);
-              });
-              apiRef.current.updateRows([
-                {
-                  id: firstTrade.id,
-                  tags: trades.flatMap((trade) => trade.tags ?? []),
-                  entryTime: lastTrade.entryTime,
-                  procent: trades
-                    .reduce(
-                      (sum, trade) => sum + parseFloat(trade.procent || 0),
-                      0
-                    )
-                    .toFixed(2),
-                  income: trades
-                    .reduce(
-                      (sum, trade) => sum + parseFloat(trade.income || 0),
-                      0
-                    )
-                    .toFixed(3),
-                  turnover: trades
-                    .reduce(
-                      (sum, trade) => sum + parseFloat(trade.turnover || 0),
-                      0
-                    )
-                    .toFixed(1),
-                  maxVolume: trades
-                    .reduce(
-                      (max, trade) =>
-                        Math.max(max, parseFloat(trade.maxVolume || 0)),
-                      0
-                    )
-                    .toFixed(1),
-                  volume: trades
-                    .reduce(
-                      (sum, trade) => sum + parseFloat(trade.volume || 0),
-                      0
-                    )
-                    .toFixed(2),
-                  comission: trades
-                    .reduce(
-                      (sum, trade) => sum + parseFloat(trade.comission || 0),
-                      0
-                    )
-                    .toFixed(3),
-                  averageEntryPrice: (
-                    parseFloat(firstTrade.averageEntryPrice) +
-                    parseFloat(lastTrade.averageEntryPrice)
-                  ).toFixed(4),
-                  averageExitPrice: (
-                    parseFloat(firstTrade.averageExitPrice) +
-                    parseFloat(lastTrade.averageExitPrice)
-                  ).toFixed(4),
-                  duration: trades.reduce(
-                    (sum, trade) => sum + parseFloat(trade.duration || 0),
-                    0
-                  ),
-                },
-              ]);
-              deleteTrades(ids);
-              updateDefaultTrade(firstTrade.id, {
+            ids.forEach((id) => {
+              apiRef.current.updateRows([{ id, _action: "delete" }]);
+            });
+            apiRef.current.updateRows([
+              {
+                id: firstTrade.id,
                 tags: trades.flatMap((trade) => trade.tags ?? []),
-                entry_time: String(lastTrade.entryTime),
-                exit_time: String(firstTrade.exitTime),
+                entryTime: lastTrade.entryTime,
                 procent: trades
                   .reduce(
                     (sum, trade) => sum + parseFloat(trade.procent || 0),
@@ -747,7 +702,7 @@ const DealActions = memo(function DealActions({ apiRef, hidden }) {
                     0
                   )
                   .toFixed(1),
-                max_volume: trades
+                maxVolume: trades
                   .reduce(
                     (max, trade) =>
                       Math.max(max, parseFloat(trade.maxVolume || 0)),
@@ -766,22 +721,68 @@ const DealActions = memo(function DealActions({ apiRef, hidden }) {
                     0
                   )
                   .toFixed(3),
-                avg_entry_price: (
+                averageEntryPrice: (
                   parseFloat(firstTrade.averageEntryPrice) +
                   parseFloat(lastTrade.averageEntryPrice)
                 ).toFixed(4),
-                avg_exit_price: (
+                averageExitPrice: (
                   parseFloat(firstTrade.averageExitPrice) +
                   parseFloat(lastTrade.averageExitPrice)
                 ).toFixed(4),
-                duration: String(
-                  trades.reduce(
-                    (sum, trade) => sum + parseFloat(trade.duration || 0),
-                    0
-                  )
+                duration: trades.reduce(
+                  (sum, trade) => sum + parseFloat(trade.duration || 0),
+                  0
                 ),
-              });
-            }
+              },
+            ]);
+            deleteTrades(ids);
+            updateDefaultTrade(firstTrade.id, {
+              tags: trades.flatMap((trade) => trade.tags ?? []),
+              entry_time: String(lastTrade.entryTime),
+              exit_time: String(firstTrade.exitTime),
+              procent: trades
+                .reduce((sum, trade) => sum + parseFloat(trade.procent || 0), 0)
+                .toFixed(2),
+              income: trades
+                .reduce((sum, trade) => sum + parseFloat(trade.income || 0), 0)
+                .toFixed(3),
+              turnover: trades
+                .reduce(
+                  (sum, trade) => sum + parseFloat(trade.turnover || 0),
+                  0
+                )
+                .toFixed(1),
+              max_volume: trades
+                .reduce(
+                  (max, trade) =>
+                    Math.max(max, parseFloat(trade.maxVolume || 0)),
+                  0
+                )
+                .toFixed(1),
+              volume: trades
+                .reduce((sum, trade) => sum + parseFloat(trade.volume || 0), 0)
+                .toFixed(2),
+              comission: trades
+                .reduce(
+                  (sum, trade) => sum + parseFloat(trade.comission || 0),
+                  0
+                )
+                .toFixed(3),
+              avg_entry_price: (
+                parseFloat(firstTrade.averageEntryPrice) +
+                parseFloat(lastTrade.averageEntryPrice)
+              ).toFixed(4),
+              avg_exit_price: (
+                parseFloat(firstTrade.averageExitPrice) +
+                parseFloat(lastTrade.averageExitPrice)
+              ).toFixed(4),
+              duration: String(
+                trades.reduce(
+                  (sum, trade) => sum + parseFloat(trade.duration || 0),
+                  0
+                )
+              ),
+            });
           }}
           sx={{
             "& .MuiSpeedDialAction-staticTooltipLabel": {
@@ -827,10 +828,13 @@ const DealActions = memo(function DealActions({ apiRef, hidden }) {
 });
 
 export default function DataTable({ setData }) {
+  const { mutate } = useSWRConfig();
   const apiRef = useGridApiRef();
   const { keys } = useKeys();
   const { mode } = useMode();
   const { user } = useUser();
+
+  const { data, isLoading } = useSWRImmutable("null");
 
   const [autoHeight, setAutoHeight] = useState(
     JSON.parse(localStorage.getItem("autoHeight")) ?? false
@@ -838,9 +842,8 @@ export default function DataTable({ setData }) {
   const [height, setHeight] = useState(
     JSON.parse(localStorage.getItem("height")) ?? 800
   );
-  const [loading, setLoading] = useState(false);
+  const [onLoad, setOnLoad] = useState(false);
   const [hidden, setHidden] = useState(true);
-  const [trades, setTrades] = useState([]);
 
   const rowId = useRef(null);
 
@@ -1168,369 +1171,364 @@ export default function DataTable({ setData }) {
     []
   );
 
+  const rows = useMemo(() => {
+    if (data) {
+      return data.map((trade) => ({
+        id: trade.id,
+        kid: trade.kid,
+        exchange: trade.exchange,
+        symbol: trade.symbol,
+        tags: trade.tags,
+        rating: trade.rating,
+        entryTime: parseInt(trade.entry_time),
+        exitTime: parseInt(trade.exit_time),
+        side: trade.side,
+        procent: parseFloat(trade.procent),
+        income: trade.income,
+        turnover: parseFloat(trade.turnover),
+        maxVolume: parseFloat(trade.max_volume),
+        volume: parseFloat(trade.volume),
+        comission: trade.comission,
+        averageEntryPrice: trade.avg_entry_price,
+        averageExitPrice: trade.avg_exit_price,
+        duration: parseInt(trade.duration),
+        apikey: keys.find((key) => key.id === trade.kid).title,
+      }));
+    } else {
+      return [];
+    }
+  }, [data]);
+
   useEffect(() => {
-    if (keys.length > 0) {
-      setLoading(true);
-      getTrades(user.id).then((t) => {
-        setTrades(
-          t.map((trade) => ({
-            id: trade.id,
-            kid: trade.kid,
-            exchange: trade.exchange,
-            symbol: trade.symbol,
-            tags: trade.tags,
-            rating: trade.rating,
-            entryTime: parseInt(trade.entry_time),
-            exitTime: parseInt(trade.exit_time),
-            side: trade.side,
-            procent: parseFloat(trade.procent),
-            income: trade.income,
-            turnover: parseFloat(trade.turnover),
-            maxVolume: parseFloat(trade.max_volume),
-            volume: parseFloat(trade.volume),
-            comission: trade.comission,
-            averageEntryPrice: trade.avg_entry_price,
-            averageExitPrice: trade.avg_exit_price,
-            duration: parseInt(trade.duration),
-            apikey: keys.find((key) => key.id === trade.kid).title,
-          }))
-        );
+    if (data?.length > 0) {
+      setOnLoad(true);
+    }
+  }, [data]);
 
-        setLoading(false);
+  useEffect(() => {
+    if (onLoad && keys.length > 0) {
+      const key1 = keys.find((key) => key.exchange === 1);
+      const key2 = keys.find((key) => key.exchange === 2);
 
-        const key1 = keys.find((key) => key.exchange === 1);
-        const key2 = keys.find((key) => key.exchange === 2);
+      var requests = [];
 
-        const requests = [];
-        const deals = [];
+      const now = Date.now();
 
-        const now = Date.now();
+      const startTime =
+        Number(
+          data.sort(
+            (a, b) => parseInt(b.entry_time) - parseInt(a.entry_time)
+          )[0].exit_time
+        ) + 1000;
 
-        const startTime =
-          Number(
-            t.sort(
-              (a, b) => parseInt(b.entry_time, 10) - parseInt(a.entry_time, 10)
-            )[0]?.exit_time ?? now - 86400000
-          ) + 1000;
+      if (key1 !== undefined && data.some((trade) => trade.exchange === 1)) {
+        requests.push(
+          axios
+            .get("https://fapi.binance.com/fapi/v1/time")
+            .then(({ data: { serverTime } }) => {
+              axios
+                .get("https://fapi.binance.com/fapi/v1/allOrders", {
+                  headers: {
+                    "X-MBX-APIKEY": key1.api_key,
+                  },
+                  params: {
+                    timestamp: serverTime,
+                    recvWindow: 60000,
+                    limit: 1000,
+                    startTime,
+                    endTime: now,
+                    signature: crypto
+                      .createHmac("sha256", key1.secret_key)
+                      .update(
+                        `timestamp=${serverTime}&recvWindow=60000&limit=1000&startTime=${startTime}&endTime=${now}`
+                      )
+                      .digest("hex"),
+                  },
+                })
+                .then(({ data }) => {
+                  const symbols = new Set();
 
-        if (key1 !== undefined) {
-          console.log("Загрузка сделок от binance");
+                  console.log("ордера (binance): ", data);
 
-          requests.push(
-            axios
-              .get("https://fapi.binance.com/fapi/v1/time")
-              .then(({ data }) => {
-                axios
-                  .get("https://fapi.binance.com/fapi/v1/allOrders", {
-                    headers: {
-                      "X-MBX-APIKEY": key1.api_key,
-                    },
-                    params: {
-                      timestamp: data.serverTime,
-                      recvWindow: 60000,
-                      limit: 1000,
-                      startTime,
-                      endTime: now,
-                      signature: crypto
-                        .createHmac("sha256", key1.secret_key)
-                        .update(
-                          `timestamp=${data.serverTime}&recvWindow=60000&limit=1000&startTime=${startTime}&endTime=${now}`
-                        )
-                        .digest("hex"),
-                    },
-                  })
-                  .then(({ data }) => {
-                    const symbols = new Set();
+                  data.forEach((e) => {
+                    if (e.status !== "CANCELED") {
+                      symbols.add(e.symbol);
+                    }
+                  });
 
-                    console.log("data: ", data);
+                  const s = Array.from(symbols);
 
-                    data.forEach((e) => {
-                      if (e.status !== "CANCELED") {
-                        symbols.add(e.symbol);
-                      }
-                    });
-
-                    const s = Array.from(symbols);
-
-                    console.log("s: ", s);
-
-                    if (s.length > 0) {
-                      axios
-                        .get("https://fapi.binance.com/fapi/v1/time")
-                        .then(({ data }) => {
-                          Promise.all(
-                            s.map(
-                              async (symbol) =>
-                                await axios
-                                  .get(
-                                    `https://fapi.binance.com/fapi/v1/userTrades?symbol=${symbol}&timestamp=${
-                                      data.serverTime
-                                    }&signature=${crypto
-                                      .createHmac("sha256", key1.secret_key)
-                                      .update(
-                                        `symbol=${symbol}&timestamp=${data.serverTime}&recvWindow=60000&limit=1000&startTime=${startTime}`
-                                      )
-                                      .digest(
-                                        "hex"
-                                      )}&recvWindow=60000&limit=1000&startTime=${startTime}`,
-                                    {
-                                      headers: {
-                                        "X-MBX-APIKEY": key1.api_key,
-                                      },
-                                    }
-                                  )
-                                  .then((r) => r.data)
-                            )
-                          ).then((deals) => {
-                            console.log("deals (bynance): ", deals);
-
-                          var trades = [];
-
-                          deals
-                            .filter((t) => t.length)
-                            .forEach((deal) => {
-                              let currentTrade = [];
-
-                              for (let i = 0; i < deal.length; i++) {
-                                const currentTradeEmpty =
-                                  currentTrade.length === 0;
-                                const isClosingTrade =
-                                  i === deal.length - 1 ||
-                                  (i < deal.length - 1 &&
-                                    parseFloat(deal[i].realizedPnl) !== 0 &&
-                                    parseFloat(deal[i + 1].realizedPnl) === 0);
-                                const isOpeningTrade =
-                                  i === 0 ||
-                                  (i > 0 &&
-                                    parseFloat(deal[i].realizedPnl) === 0 &&
-                                    parseFloat(deal[i - 1].realizedPnl) !== 0);
-
-                                if (currentTradeEmpty || isOpeningTrade) {
-                                  currentTrade.push(deal[i]);
-                                } else if (isClosingTrade) {
-                                  currentTrade.push(deal[i]);
-                                  trades.push([...currentTrade]);
-                                  currentTrade = [];
-                                } else {
-                                  currentTrade.push(deal[i]);
-                                }
-                              }
-                            });
-
-                          createDefaultTrades(
-                            trades.map((trade) => {
-                              var b = trade.filter((t) => t.side === "BUY");
-                              var s = trade.filter((t) => t.side === "SELL");
-                              var bt = b.reduce(
-                                (a, c) => a + parseFloat(c.qty),
-                                0
-                              );
-                              var st = s.reduce(
-                                (a, c) => a + parseFloat(c.qty),
-                                0
-                              );
-                              var bv = b.reduce(
-                                (a, c) => a + parseFloat(c.quoteQty),
-                                0
-                              );
-                              var sv = s.reduce(
-                                (a, c) => a + parseFloat(c.quoteQty),
-                                0
-                              );
-                              return {
-                                uid: user.id,
-                                kid: key1.id,
-                                exchange: 1,
-                                symbol: trade[0].symbol,
-                                entry_time: String(trade[0].time),
-                                exit_time: String(trade[trade.length - 1].time),
-                                side: trade[0].side,
-                                procent: (
-                                  ((sv / st - bv / bt) / (bv / bt)) *
-                                  100
-                                ).toFixed(2),
-                                income: trade
-                                  .reduce(
-                                    (a, c) => a + parseFloat(c.realizedPnl),
-                                    0
-                                  )
-                                  .toFixed(3),
-                                turnover: ((bt + st) / 2).toFixed(1),
-                                max_volume: (
-                                  Math.max(
-                                    bt + st,
-                                    Math.max(
-                                      ...b.map((b) => parseFloat(b.qty)),
-                                      ...s.map((s) => parseFloat(s.qty))
-                                    )
-                                  ) / 2
-                                ).toFixed(1),
-                                volume: (
-                                  trade.reduce(
-                                    (a, d) =>
-                                      a +
-                                      parseFloat(d.price) * parseFloat(d.qty),
-                                    0
-                                  ) / 2
-                                ).toFixed(2),
-                                comission: trade
-                                  .reduce(
-                                    (a, d) => a + parseFloat(d.commission),
-                                    0
-                                  )
-                                  .toFixed(3),
-                                avg_entry_price: (
-                                  b.reduce(
-                                    (a, c) =>
-                                      a +
-                                      parseFloat(c.price) * parseFloat(c.qty),
-                                    0
-                                  ) / bt
-                                ).toFixed(4),
-                                avg_exit_price: (
-                                  s.reduce(
-                                    (a, c) =>
-                                      a +
-                                      parseFloat(c.price) * parseFloat(c.qty),
-                                    0
-                                  ) / st
-                                ).toFixed(4),
-                                duration: String(
-                                  trade[trade.length - 1].time - trade[0].time
-                                ),
-                              };
-                            })
-                          ).then((b) => {
-                            console.log("createDefaultTrades (bynance): ", b);
-
-                            b.forEach((trade) => {
-                              apiRef.current.updateRows([
-                                {
-                                  id: trade.id,
-                                  kid: trade.kid,
-                                  exchange: trade.exchange,
-                                  symbol: trade.symbol,
-                                  tags: trade.tags,
-                                  rating: trade.rating,
-                                  entryTime: parseInt(trade.entry_time),
-                                  exitTime: parseInt(trade.exit_time),
-                                  side: trade.side,
-                                  procent: parseFloat(trade.procent),
-                                  income: trade.income,
-                                  turnover: parseFloat(trade.turnover),
-                                  maxVolume: parseFloat(trade.max_volume),
-                                  volume: trade.volume,
-                                  comission: trade.comission,
-                                  averageEntryPrice: trade.avg_entry_price,
-                                  averageExitPrice: trade.avg_exit_price,
-                                  duration: parseInt(trade.duration),
-                                  apikey: keys.find(
-                                    (key) => key.id === trade.kid
-                                  ).title,
+                  if (s.length > 0) {
+                    Promise.all(
+                      s.map(
+                        async (symbol) =>
+                          await axios
+                            .get(
+                              `https://fapi.binance.com/fapi/v1/userTrades?symbol=${symbol}&timestamp=${serverTime}&signature=${crypto
+                                .createHmac("sha256", key1.secret_key)
+                                .update(
+                                  `symbol=${symbol}&timestamp=${serverTime}&recvWindow=60000&limit=1000&startTime=${startTime}`
+                                )
+                                .digest(
+                                  "hex"
+                                )}&recvWindow=60000&limit=1000&startTime=${startTime}`,
+                              {
+                                headers: {
+                                  "X-MBX-APIKEY": key1.api_key,
                                 },
-                              ]);
-                            });
+                              }
+                            )
+                            .then((r) => r.data)
+                      )
+                    ).then((deals) => {
+                      console.log("сделки (binance): ", deals);
+
+                      var trades = [];
+
+                      deals
+                        .filter((t) => t.length)
+                        .forEach((deal) => {
+                          let currentTrade = [];
+
+                          for (let i = 0; i < deal.length; i++) {
+                            const currentTradeEmpty = currentTrade.length === 0;
+                            const isClosingTrade =
+                              i === deal.length - 1 ||
+                              (i < deal.length - 1 &&
+                                parseFloat(deal[i].realizedPnl) !== 0 &&
+                                parseFloat(deal[i + 1].realizedPnl) === 0);
+                            const isOpeningTrade =
+                              i === 0 ||
+                              (i > 0 &&
+                                parseFloat(deal[i].realizedPnl) === 0 &&
+                                parseFloat(deal[i - 1].realizedPnl) !== 0);
+
+                            if (currentTradeEmpty || isOpeningTrade) {
+                              currentTrade.push(deal[i]);
+                            } else if (isClosingTrade) {
+                              currentTrade.push(deal[i]);
+                              trades.push([...currentTrade]);
+                              currentTrade = [];
+                            } else {
+                              currentTrade.push(deal[i]);
+                            }
+                          }
+                        });
+
+                      console.log("trades (binance):", trades);
+
+                      if (trades.length > 0) {
+                        createDefaultTrades(
+                          trades.map((trade) => {
+                            var b = trade.filter((t) => t.side === "BUY");
+                            var s = trade.filter((t) => t.side === "SELL");
+                            var bt = b.reduce(
+                              (a, c) => a + parseFloat(c.qty),
+                              0
+                            );
+                            var st = s.reduce(
+                              (a, c) => a + parseFloat(c.qty),
+                              0
+                            );
+                            var bv = b.reduce(
+                              (a, c) => a + parseFloat(c.quoteQty),
+                              0
+                            );
+                            var sv = s.reduce(
+                              (a, c) => a + parseFloat(c.quoteQty),
+                              0
+                            );
+                            return {
+                              uid: user.id,
+                              kid: key1.id,
+                              exchange: 1,
+                              symbol: trade[0].symbol,
+                              entry_time: String(trade[0].time),
+                              exit_time: String(trade[trade.length - 1].time),
+                              side: trade[0].side,
+                              procent: (
+                                ((sv / st - bv / bt) / (bv / bt)) *
+                                100
+                              ).toFixed(2),
+                              income: trade
+                                .reduce(
+                                  (a, c) => a + parseFloat(c.realizedPnl),
+                                  0
+                                )
+                                .toFixed(3),
+                              turnover: ((bt + st) / 2).toFixed(1),
+                              max_volume: (
+                                Math.max(
+                                  bt + st,
+                                  Math.max(
+                                    ...b.map((b) => parseFloat(b.qty)),
+                                    ...s.map((s) => parseFloat(s.qty))
+                                  )
+                                ) / 2
+                              ).toFixed(1),
+                              volume: (
+                                trade.reduce(
+                                  (a, d) =>
+                                    a + parseFloat(d.price) * parseFloat(d.qty),
+                                  0
+                                ) / 2
+                              ).toFixed(2),
+                              comission: trade
+                                .reduce(
+                                  (a, d) => a + parseFloat(d.commission),
+                                  0
+                                )
+                                .toFixed(3),
+                              avg_entry_price: (
+                                b.reduce(
+                                  (a, c) =>
+                                    a + parseFloat(c.price) * parseFloat(c.qty),
+                                  0
+                                ) / bt
+                              ).toFixed(4),
+                              avg_exit_price: (
+                                s.reduce(
+                                  (a, c) =>
+                                    a + parseFloat(c.price) * parseFloat(c.qty),
+                                  0
+                                ) / st
+                              ).toFixed(4),
+                              duration: String(
+                                trade[trade.length - 1].time - trade[0].time
+                              ),
+                            };
+                          })
+                        ).then((b) => {
+                          console.log("createDefaultTrades (binance): ", b);
+
+                          b.forEach((trade) => {
+                            apiRef.current.updateRows([
+                              {
+                                id: trade.id,
+                                kid: trade.kid,
+                                exchange: trade.exchange,
+                                symbol: trade.symbol,
+                                tags: trade.tags,
+                                rating: trade.rating,
+                                entryTime: parseInt(trade.entry_time),
+                                exitTime: parseInt(trade.exit_time),
+                                side: trade.side,
+                                procent: parseFloat(trade.procent),
+                                income: trade.income,
+                                turnover: parseFloat(trade.turnover),
+                                maxVolume: parseFloat(trade.max_volume),
+                                volume: trade.volume,
+                                comission: trade.comission,
+                                averageEntryPrice: trade.avg_entry_price,
+                                averageExitPrice: trade.avg_exit_price,
+                                duration: parseInt(trade.duration),
+                                apikey: keys.find((key) => key.id === trade.kid)
+                                  .title,
+                              },
+                            ]);
                           });
                         });
-
-                        });
-                    }
-                  })
-                  .catch((e) => {
-                    console.log("хуйня от binance: ", e);
-                  });
-              })
-          );
-        }
-
-        if (key2 !== undefined) {
-          console.log("Загрузка сделок от bybit");
-
-          requests.push(
-            axios
-              .get("https://api.bybit.com/v5/market/time")
-              .then(async ({ data }) => {
-                let cursor = "";
-
-                do {
-                  await axios
-                    .get(
-                      `https://api.bybit.com/v5/execution/list?category=linear&limit=100&startTime=${startTime}&endTime=${now}&cursor=${cursor}`,
-                      {
-                        headers: {
-                          "X-BAPI-SIGN": crypto
-                            .createHmac("sha256", key2.secret_key)
-                            .update(
-                              data.time +
-                                key2.api_key +
-                                60000 +
-                                `category=linear&limit=100&startTime=${startTime}&endTime=${now}&cursor=${cursor}`
-                            )
-                            .digest("hex"),
-                          "X-BAPI-API-KEY": key2.api_key,
-                          "X-BAPI-TIMESTAMP": data.time,
-                          "X-BAPI-RECV-WINDOW": 60000,
-                        },
                       }
-                    )
-                    .then(({ data }) => {
-                      cursor = data.result.nextPageCursor;
-                      deals.push(data.result.list);
-                    })
-                    .catch((e) => {
-                      console.log("хуйня от bybit: ", e);
                     });
-                } while (cursor !== "");
-              })
-          );
-        }
+                  }
+                })
+                .catch((e) => {
+                  console.log("хуйня от binance: ", e);
+                });
+            })
+        );
+      }
 
-        Promise.all(requests).then(() => {
-          console.log("deals: ", deals);
+      var bybit = [];
 
-          if (deals[0]?.length > 1) {
-            var g = deals.flat().reduce((groups, deal) => {
-              if (!groups[deal.symbol]) {
-                groups[deal.symbol] = [];
-              }
-              groups[deal.symbol].push(deal);
-              return groups;
-            }, {});
+      if (key2 !== undefined && data.some((trade) => trade.exchange === 2)) {
+        requests.push(
+          axios
+            .get("https://api.bybit.com/v5/market/time")
+            .then(async ({ data: { time } }) => {
+              let cursor = "";
 
-            for (var symbol in g) {
-              g[symbol].sort((a, b) =>
-                a.execTime > b.execTime ? 1 : a.execTime < b.execTime ? -1 : 0
-              );
+              do {
+                await axios
+                  .get(
+                    `https://api.bybit.com/v5/execution/list?category=linear&limit=100&startTime=${startTime}&endTime=${now}&cursor=${cursor}`,
+                    {
+                      headers: {
+                        "X-BAPI-SIGN": crypto
+                          .createHmac("sha256", key2.secret_key)
+                          .update(
+                            time +
+                              key2.api_key +
+                              60000 +
+                              `category=linear&limit=100&startTime=${startTime}&endTime=${now}&cursor=${cursor}`
+                          )
+                          .digest("hex"),
+                        "X-BAPI-API-KEY": key2.api_key,
+                        "X-BAPI-TIMESTAMP": time,
+                        "X-BAPI-RECV-WINDOW": 60000,
+                      },
+                    }
+                  )
+                  .then(({ data }) => {
+                    cursor = data.result.nextPageCursor;
+                    bybit.push(data.result.list);
+                  });
+              } while (cursor !== "");
+            })
+            .catch((e) => {
+              console.log("хуйня от bybit: ", e);
+            })
+        );
+      }
+
+      Promise.all(requests).then(() => {
+        console.log("сделки (bybit): ", bybit);
+
+        if (bybit[0]?.length > 1) {
+          var g = bybit.flat().reduce((groups, deal) => {
+            if (!groups[deal.symbol]) {
+              groups[deal.symbol] = [];
             }
+            groups[deal.symbol].push(deal);
+            return groups;
+          }, {});
 
-            var s = Object.values(g).reduce(
-              (sorted, deals) => sorted.concat(deals),
-              []
+          for (var symbol in g) {
+            g[symbol].sort((a, b) =>
+              a.execTime > b.execTime ? 1 : a.execTime < b.execTime ? -1 : 0
             );
+          }
 
-            var trades = [];
-            let currentTrade = [];
+          var s = Object.values(g).reduce(
+            (sorted, deals) => sorted.concat(deals),
+            []
+          );
 
-            for (var deal of s) {
-              if (
-                (deal.closedSize === "0" &&
-                  (currentTrade.length === 0 ||
-                    currentTrade[currentTrade.length - 1].closedSize !==
-                      "0")) ||
-                (currentTrade.length > 0 &&
-                  deal.symbol !== currentTrade[0].symbol)
-              ) {
-                if (currentTrade.length > 0) {
-                  trades.push(currentTrade);
-                  currentTrade = [];
-                }
+          var trades = [];
+          let currentTrade = [];
+
+          for (var deal of s) {
+            if (
+              (deal.closedSize === "0" &&
+                (currentTrade.length === 0 ||
+                  currentTrade[currentTrade.length - 1].closedSize !== "0")) ||
+              (currentTrade.length > 0 &&
+                deal.symbol !== currentTrade[0].symbol)
+            ) {
+              if (currentTrade.length > 0) {
+                trades.push(currentTrade);
+                currentTrade = [];
               }
-
-              currentTrade.push(deal);
             }
 
-            trades.push(currentTrade);
+            currentTrade.push(deal);
+          }
 
+          trades.push(currentTrade);
+
+          console.log("trades (bybit): ", trades);
+
+          if (trades.length > 0) {
             createDefaultTrades(
               trades.map((trade) => {
                 const b = trade.filter((t) => t.side === "Buy");
@@ -1614,10 +1612,13 @@ export default function DataTable({ setData }) {
               });
             });
           }
-        });
+        }
       });
     }
-  }, [keys]);
+    return () => {
+      mutate("null");
+    };
+  }, [onLoad]);
 
   const dark = mode === "dark";
 
@@ -1667,9 +1668,9 @@ export default function DataTable({ setData }) {
             toolbar: CustomToolbar,
           }}
           columns={columns}
-          loading={loading}
+          loading={isLoading}
           apiRef={apiRef}
-          rows={trades}
+          rows={rows}
           sx={{
             border: "none",
             "--DataGrid-overlayHeight": "600px",
@@ -1745,9 +1746,9 @@ export default function DataTable({ setData }) {
               toolbar: CustomToolbar,
             }}
             columns={columns}
-            loading={loading}
+            loading={isLoading}
             apiRef={apiRef}
-            rows={trades}
+            rows={rows}
             sx={{
               border: "none",
               "--DataGrid-overlayHeight": "600px",

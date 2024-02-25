@@ -1,9 +1,9 @@
 "use client";
 
 import TextField from "@mui/material/TextField";
+import Popover from "@mui/material/Popover";
 import Button from "@mui/material/Button";
 import Stack from "@mui/material/Stack";
-import Menu from "@mui/material/Menu";
 
 import { useState, useRef } from "react";
 
@@ -51,7 +51,7 @@ export default function AddBoardMenu({
   }
 
   return (
-    <Menu
+    <Popover
       open={open}
       anchorEl={anchorEl}
       anchorOrigin={{
@@ -113,6 +113,6 @@ export default function AddBoardMenu({
           </Button>
         </Stack>
       </Stack>
-    </Menu>
+    </Popover>
   );
 }

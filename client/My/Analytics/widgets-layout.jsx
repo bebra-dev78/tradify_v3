@@ -11,42 +11,41 @@ import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
 import Box from "@mui/material/Box";
 
-import { useState, useEffect, useCallback, memo } from "react";
 import { Responsive, WidthProvider } from "react-grid-layout";
+import { useState, useCallback, memo } from "react";
+import useSWRImmutable from "swr/immutable";
 import dynamic from "next/dynamic";
 
 import AddBoardMenu from "#/client/My/Analytics/add-board-menu";
 import { useMode } from "#/client/Global/theme-registry";
-import { useKeys, useUser } from "#/app/my/layout";
-import { getTrades } from "#/server/trades";
 import Iconify from "#/utils/iconify";
 
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 
-const Profit = dynamic(() => import("#/client/My/Analytics/widgets/profit"));
+const CoinVolume = dynamic(() =>
+  import("#/client/My/Analytics/widgets/coin-volume")
+);
+const CounterOfTrades = dynamic(() =>
+  import("#/client/My/Analytics/widgets/counter-of-trades")
+);
+const CumulativeProfit = dynamic(() =>
+  import("#/client/My/Analytics/widgets/cumulative-profit")
+);
 const DistributionByCoin = dynamic(() =>
   import("#/client/My/Analytics/widgets/distribution-by-coin")
 );
 const DistributionBySide = dynamic(() =>
   import("#/client/My/Analytics/widgets/distribution-by-side")
 );
-const CounterOfTrades = dynamic(() =>
-  import("#/client/My/Analytics/widgets/counter-of-trades")
-);
 const CumulativeCommission = dynamic(() =>
   import("#/client/My/Analytics/widgets/cumulative-commission")
 );
-const CoinVolume = dynamic(() =>
-  import("#/client/My/Analytics/widgets/coin-volume")
-);
-const CumulativeProfit = dynamic(() =>
-  import("#/client/My/Analytics/widgets/cumulative-profit")
-);
+const Profit = dynamic(() => import("#/client/My/Analytics/widgets/profit"));
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
-export default memo(function Layout({
+export default memo(function WidgetsLayout({
   boards,
   widgets,
   setBoards,
@@ -54,33 +53,25 @@ export default memo(function Layout({
   currentBoardRef,
   widgetsParamsRef,
 }) {
-  const { keys } = useKeys();
-  const { user } = useUser();
   const { mode } = useMode();
+
+  const { data, isLoading } = useSWRImmutable("null");
 
   const [confirmation, setConfirmation] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
-  const [trades, setTrades] = useState([]);
   const [value, setValue] = useState(0);
 
-  useEffect(() => {
-    widgetsParamsRef.current =
-      JSON.parse(localStorage.getItem("widgetsParams")) ?? {};
-    if (keys.length > 0) {
-      getTrades(user.id).then((t) => {
-        setTrades(t);
-      });
-    }
-  }, [keys]);
+  widgetsParamsRef.current =
+    JSON.parse(localStorage.getItem("widgetsParams")) ?? {};
 
   const handleDeleteWidget = useCallback(
     (ID) => {
       setWidgets((prev) => {
+        delete widgetsParamsRef.current[`${ID}-${boards[value]}`];
         const v = prev.filter(
           (w) => !(w.owner_board === boards[value] && w.id === ID)
         );
         localStorage.setItem("widgets", JSON.stringify(v));
-        delete widgetsParamsRef.current[`${ID}-${boards[value]}`];
         localStorage.setItem(
           "widgetsParams",
           JSON.stringify(widgetsParamsRef.current)
@@ -118,7 +109,7 @@ export default memo(function Layout({
           <DialogContent sx={{ pl: 3, pr: 3 }}>
             <DialogContentText>
               Вы уверены, что хотите удалить доску{" "}
-              {boards.find((b, i) => i === value)}?
+              {boards.find((_, i) => i === value)}?
             </DialogContentText>
           </DialogContent>
           <DialogActions sx={{ p: 3 }}>
@@ -137,7 +128,7 @@ export default memo(function Layout({
                   return acc;
                 }, {});
                 setBoards((prev) => {
-                  const n = prev.filter((b, i) => i !== value);
+                  const n = prev.filter((_, i) => i !== value);
                   localStorage.setItem("boards", JSON.stringify(n));
 
                   return n;
@@ -311,7 +302,8 @@ export default memo(function Layout({
                     }}
                   >
                     <DistributionByCoin
-                      trades={trades}
+                      data={data}
+                      isLoading={isLoading}
                       handleDeleteWidget={handleDeleteWidget}
                     />
                   </div>
@@ -328,9 +320,9 @@ export default memo(function Layout({
                     }}
                   >
                     <DistributionBySide
-                      trades={trades}
+                      data={data}
+                      isLoading={isLoading}
                       handleDeleteWidget={handleDeleteWidget}
-                      widgetsParamsRef={widgetsParamsRef.current}
                     />
                   </div>
                 );
@@ -346,7 +338,8 @@ export default memo(function Layout({
                     }}
                   >
                     <CounterOfTrades
-                      trades={trades}
+                      data={data}
+                      isLoading={isLoading}
                       handleDeleteWidget={handleDeleteWidget}
                     />
                   </div>
@@ -363,7 +356,8 @@ export default memo(function Layout({
                     }}
                   >
                     <CumulativeCommission
-                      trades={trades}
+                      data={data}
+                      isLoading={isLoading}
                       handleDeleteWidget={handleDeleteWidget}
                     />
                   </div>
@@ -380,7 +374,8 @@ export default memo(function Layout({
                     }}
                   >
                     <CoinVolume
-                      trades={trades}
+                      data={data}
+                      isLoading={isLoading}
                       handleDeleteWidget={handleDeleteWidget}
                     />
                   </div>
@@ -397,7 +392,8 @@ export default memo(function Layout({
                     }}
                   >
                     <Profit
-                      trades={trades}
+                      data={data}
+                      isLoading={isLoading}
                       handleDeleteWidget={handleDeleteWidget}
                     />
                   </div>
@@ -414,7 +410,8 @@ export default memo(function Layout({
                     }}
                   >
                     <CumulativeProfit
-                      trades={trades}
+                      data={data}
+                      isLoading={isLoading}
                       handleDeleteWidget={handleDeleteWidget}
                     />
                   </div>

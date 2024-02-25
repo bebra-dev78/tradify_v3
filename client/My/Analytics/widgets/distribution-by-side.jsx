@@ -13,16 +13,17 @@ import Chart from "react-apexcharts";
 import Iconify from "#/utils/iconify";
 
 export default memo(function DistributionBySide({
-  trades,
+  data,
+  isLoading,
   handleDeleteWidget,
 }) {
   const theme = useTheme();
 
   const counter = useMemo(() => {
-    if (trades !== null) {
+    if (data) {
       let l = 0;
       let s = 0;
-      trades.forEach((trade) => {
+      data.forEach((trade) => {
         if (trade.side === "BUY") {
           l++;
         } else {
@@ -31,9 +32,11 @@ export default memo(function DistributionBySide({
       });
       return [l, s];
     } else [0, 0];
-  }, [trades]);
+  }, [data]);
 
-  return counter[0] > 0 || counter[1] > 0 ? (
+  return isLoading ? (
+    <Skeleton sx={{ height: "100%" }} />
+  ) : (
     <Card sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
       <CardHeader
         title="Распределение по LONG/SHORT"
@@ -140,7 +143,5 @@ export default memo(function DistributionBySide({
         }}
       />
     </Card>
-  ) : (
-    <Skeleton animation="wave" sx={{ height: "100%" }} />
   );
 });

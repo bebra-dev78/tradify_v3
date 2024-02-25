@@ -7,7 +7,6 @@ import Typography from "@mui/material/Typography";
 import IconButton from "@mui/material/IconButton";
 import Container from "@mui/material/Container";
 import TextField from "@mui/material/TextField";
-import Collapse from "@mui/material/Collapse";
 import Toolbar from "@mui/material/Toolbar";
 import Divider from "@mui/material/Divider";
 import Button from "@mui/material/Button";
@@ -84,23 +83,12 @@ export default memo(function WidgetsDialog({
   return (
     <>
       <Stack sx={{ justifyContent: "space-between", flexDirection: "row" }}>
-        <Typography variant="h4">
-          Аналитика
-          <IconButton
-            onClick={() => setOpenInfo((prev) => !prev)}
-            sx={{ mb: "2px" }}
-          >
-            <Iconify
-              icon="solar:info-circle-linear"
-              color="text.disabled"
-              width={20}
-            />
-          </IconButton>
-        </Typography>
+        <Typography variant="h4">Аналитика</Typography>
         <Button
           color="inherit"
           variant="contained"
           startIcon={<Iconify icon="solar:widget-add-bold" />}
+          З
           disabled={widgets.length >= 78}
           onClick={() => {
             setOpen(true);
@@ -110,17 +98,6 @@ export default memo(function WidgetsDialog({
           Добавить виджеты ({widgets.length}/999)
         </Button>
       </Stack>
-      <Collapse in={openInfo} timeout="auto" unmountOnExit>
-        <Typography sx={{ pt: "24px", maxWidth: 800, color: "text.secondary" }}>
-          Lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam
-          ipsam, dolores doloremque rem obcaecati voluptas vero officiis velit
-          quae incidunt voluptatibus ea nisi quam architecto eius sint. Enim
-          asperiores suscipit velit repudiandae consectetur tempore excepturi
-          temporibus dolor possimus dolorem nulla sequi nisi molestiae adipisci
-          vitae impedit voluptatum, quos, ut facere eos. Harum veniam minima,
-          sint fugiat non cupiditate obcaecati sit.
-        </Typography>
-      </Collapse>
       <Dialog
         fullScreen
         open={open}

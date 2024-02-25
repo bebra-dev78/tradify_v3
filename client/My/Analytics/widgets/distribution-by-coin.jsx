@@ -15,22 +15,26 @@ import Chart from "react-apexcharts";
 import Iconify from "#/utils/iconify";
 
 export default memo(function DistributionByCoin({
-  trades,
+  data,
+  isLoading,
   handleDeleteWidget,
 }) {
   const counter = useMemo(() => {
-    if (trades !== null) {
+    if (data) {
       const u = {};
-      trades.forEach((trade) => {
+      data.forEach((trade) => {
         u[trade.symbol] = u[trade.symbol] ? u[trade.symbol] + 1 : 1;
       });
-      return u;
+
+      return Object.fromEntries(Object.entries(u).sort((a, b) => b[1] - a[1]));
     } else {
       return {};
     }
-  }, [trades]);
+  }, [data]);
 
-  return trades.length > 0 ? (
+  return isLoading ? (
+    <Skeleton sx={{ height: "100%" }} />
+  ) : (
     <Card sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
       <CardHeader
         title="Распределение по монетам"
@@ -168,7 +172,5 @@ export default memo(function DistributionByCoin({
         }}
       />
     </Card>
-  ) : (
-    <Skeleton animation="wave" sx={{ height: "100%" }} />
   );
 });

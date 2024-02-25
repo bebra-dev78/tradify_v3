@@ -341,7 +341,9 @@ export default function ThemeRegistry({ children }) {
             styleOverrides: {
               root: {
                 fontWeight: 600,
-                border: "2px solid rgb(22, 28, 36)",
+                border: dark
+                  ? "2px solid rgb(22, 28, 36)"
+                  : "2px solid rgb(255, 255, 255)",
                 backgroundColor: "rgb(255, 86, 48)",
                 color: dark ? "rgb(255, 255, 255)" : "rgb(33, 43, 54)",
               },
@@ -512,6 +514,9 @@ export default function ThemeRegistry({ children }) {
             },
           },
           MuiSkeleton: {
+            defaultProps: {
+              animation: "wave",
+            },
             styleOverrides: {
               root: {
                 borderRadius: "16px",

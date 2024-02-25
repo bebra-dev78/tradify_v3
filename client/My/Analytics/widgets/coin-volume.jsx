@@ -12,30 +12,44 @@ import Chart from "react-apexcharts";
 
 import Iconify from "#/utils/iconify";
 
-export default memo(function CoinVolume({ trades, handleDeleteWidget }) {
+export default memo(function CoinVolume({
+  data,
+  isLoading,
+  handleDeleteWidget,
+}) {
   const theme = useTheme();
 
   const counter = useMemo(() => {
-    if (trades !== null) {
-      const aggregatedData = trades.reduce((acc, trade) => {
+    if (data) {
+      const aggregatedData = data.reduce((acc, trade) => {
         if (acc[trade.symbol]) {
-          acc[trade.symbol] += trade.volume;
+          acc[trade.symbol] += parseFloat(trade.volume);
         } else {
-          acc[trade.symbol] = trade.volume;
+          acc[trade.symbol] = parseFloat(trade.volume);
         }
         return acc;
       }, {});
 
       return {
-        categories: Object.keys(aggregatedData),
-        series: Object.values(aggregatedData),
+        categories: Object.keys(
+          Object.fromEntries(
+            Object.entries(aggregatedData).sort((a, b) => a[1] - b[1])
+          )
+        ),
+        series: Object.values(
+          Object.fromEntries(
+            Object.entries(aggregatedData).sort((a, b) => a[1] - b[1])
+          )
+        ),
       };
     } else {
-      return {};
+      return { categories: {}, series: {} };
     }
-  }, [trades]);
+  }, [data]);
 
-  return counter["categories"].length > 0 && counter["series"].length > 0 ? (
+  return isLoading ? (
+    <Skeleton sx={{ height: "100%" }} />
+  ) : (
     <Card sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
       <CardHeader
         title="Объём по монете"
@@ -142,7 +156,5 @@ export default memo(function CoinVolume({ trades, handleDeleteWidget }) {
         }}
       />
     </Card>
-  ) : (
-    <Skeleton animation="wave" sx={{ height: "100%" }} />
   );
 });

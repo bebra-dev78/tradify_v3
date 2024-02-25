@@ -32,6 +32,7 @@ import axios from "axios";
 
 import Annotations from "#/client/My/Trades/tools/annotations";
 import Figures from "#/client/My/Trades/tools/figures";
+import Lineup from "#/client/My/Trades/tools/lineup";
 import Lines from "#/client/My/Trades/tools/lines";
 import Cuts from "#/client/My/Trades/tools/cuts";
 import { useKeys } from "#/app/my/layout";
@@ -53,6 +54,135 @@ registerLocale("ru", {
   close: "Close: ",
   volume: "Объём: ",
   turnover: "Оборот: ",
+});
+
+registerOverlay({
+  name: "lineup",
+  needDefaultPointFigure: true,
+  needDefaultXAxisFigure: true,
+  needDefaultYAxisFigure: true,
+  totalStep: 3,
+  createPointFigures: ({ coordinates, overlay }) => {
+    if (coordinates.length === 2) {
+      var x1 = Math.min(coordinates[0].x, coordinates[1].x);
+      var y1 = Math.min(coordinates[0].y, coordinates[1].y);
+      var x2 = Math.max(coordinates[0].x, coordinates[1].x);
+      var y2 = Math.max(coordinates[0].y, coordinates[1].y);
+
+      var verticalDown = coordinates[1].y > coordinates[0].y;
+      var horizontalLeft = coordinates[1].x < coordinates[0].x;
+
+      var centerX = (x1 + x2) / 2;
+      var centerY = (y1 + y2) / 2;
+
+      var currentColor = verticalDown
+        ? "rgb(249, 40, 85)"
+        : "rgb(22, 119, 255)";
+
+      var styles = {
+        color: currentColor,
+      };
+
+      return [
+        {
+          key: "lineup",
+          type: "rect",
+          attrs: {
+            x: Math.min(x1, x2),
+            y: Math.min(y1, y2),
+            width: Math.abs(x2 - x1),
+            height: Math.abs(y2 - y1),
+          },
+          styles: {
+            color: verticalDown
+              ? "rgba(249, 40, 85, .25)"
+              : "rgba(22, 119, 255, .25)",
+          },
+        },
+        {
+          type: "line",
+          attrs: {
+            coordinates: [
+              { x: x1, y: centerY },
+              { x: x2, y: centerY },
+            ],
+          },
+          styles,
+        },
+        {
+          type: "line",
+          attrs: {
+            coordinates: [
+              { x: horizontalLeft ? x1 + 10 : x2 - 10, y: centerY + 5 },
+              { x: horizontalLeft ? x1 : x2, y: centerY },
+            ],
+          },
+          styles,
+        },
+        {
+          type: "line",
+          attrs: {
+            coordinates: [
+              { x: horizontalLeft ? x1 + 10 : x2 - 10, y: centerY - 5 },
+              { x: horizontalLeft ? x1 : x2, y: centerY },
+            ],
+          },
+          styles,
+        },
+        {
+          type: "line",
+          attrs: {
+            coordinates: [
+              { x: centerX, y: y1 },
+              { x: centerX, y: y2 },
+            ],
+          },
+          styles,
+        },
+        {
+          type: "line",
+          attrs: {
+            coordinates: [
+              { x: centerX + 5, y: verticalDown ? y2 - 10 : y1 + 10 },
+              { x: centerX, y: verticalDown ? y2 : y1 },
+            ],
+          },
+          styles,
+        },
+        {
+          type: "line",
+          attrs: {
+            coordinates: [
+              { x: centerX - 5, y: verticalDown ? y2 - 10 : y1 + 10 },
+              { x: centerX, y: verticalDown ? y2 : y1 },
+            ],
+          },
+          styles,
+        },
+        {
+          type: "text",
+          attrs: {
+            x: x1,
+            y: y2 + 10,
+            text: `${(
+              overlay.points[1].value - overlay.points[0].value
+            ).toFixed(4)}$ || ${(
+              ((overlay.points[1].value - overlay.points[0].value) /
+                overlay.points[0].value) *
+              100
+            ).toFixed(2)}%`,
+          },
+          styles: {
+            style: "stroke_fill",
+            family: "inherit",
+            borderColor: currentColor,
+            backgroundColor: currentColor,
+          },
+        },
+      ];
+    }
+    return [];
+  },
 });
 
 registerOverlay({
@@ -1736,6 +1866,8 @@ export default function KlinesChart({ data, setData }) {
             <Annotations addOverlay={addOverlayRef} />
             <Divider />
             <Cuts addOverlay={addOverlayRef} />
+            <Divider />
+            <Lineup addOverlay={addOverlayRef} />
           </Stack>
           <Box id="chart" sx={{ height: "75vh", width: "100%" }} />
         </Box>

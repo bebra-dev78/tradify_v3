@@ -7,19 +7,22 @@ import Stack from "@mui/material/Stack";
 import Card from "@mui/material/Card";
 import Box from "@mui/material/Box";
 
+import useSWRImmutable from "swr/immutable";
 import { DateTime } from "luxon";
 import { useMemo } from "react";
 
 import Iconify from "#/utils/iconify";
 
-export default function ProfitItem({ trades }) {
+export default function ProfitItem() {
+  const { data, isLoading } = useSWRImmutable("null");
+
   const [current, diff] = useMemo(() => {
-    if (trades !== null) {
+    if (data) {
       const now = Date.now();
 
-      const counter = trades
-        ?.filter(
-          (trade) => now - parseInt(trade.entry_time, 10) <= 24 * 60 * 60 * 1000
+      const counter = data
+        .filter(
+          (trade) => now - parseInt(trade.entry_time) <= 24 * 60 * 60 * 1000
         )
         .reduce(
           (acc, trade) =>
@@ -27,9 +30,9 @@ export default function ProfitItem({ trades }) {
           0
         );
 
-      const subCounter = trades
-        ?.filter((trade) => {
-          const entryTime = parseInt(trade.entry_time, 10);
+      const subCounter = data
+        .filter((trade) => {
+          const entryTime = parseInt(trade.entry_time);
           return (
             now - entryTime > 24 * 60 * 60 * 1000 &&
             now - entryTime <= 48 * 60 * 60 * 1000
@@ -41,26 +44,15 @@ export default function ProfitItem({ trades }) {
           0
         );
 
-        console.log(trades
-          ?.filter(
-            (trade) => now - parseInt(trade.entry_time, 10) <= 24 * 60 * 60 * 1000
-          ));
-        console.log(trades
-          ?.filter((trade) => {
-            const entryTime = parseInt(trade.entry_time, 10);
-            return (
-              now - entryTime > 24 * 60 * 60 * 1000 &&
-              now - entryTime <= 48 * 60 * 60 * 1000
-            );
-          }));
-
       return [counter.toFixed(2), (counter - subCounter).toFixed(2)];
     } else {
       return [0, 0];
     }
-  }, [trades]);
+  }, [data]);
 
-  return trades !== null ? (
+  return isLoading ? (
+    <Skeleton sx={{ height: 166 }} />
+  ) : (
     <Card
       sx={{
         padding: "24px",
@@ -119,7 +111,5 @@ export default function ProfitItem({ trades }) {
         </Stack>
       </Box>
     </Card>
-  ) : (
-    <Skeleton animation="wave" sx={{ height: 166 }} />
   );
 }

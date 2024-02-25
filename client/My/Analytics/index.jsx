@@ -6,16 +6,16 @@ import Fab from "@mui/material/Fab";
 import { useState, useRef } from "react";
 
 import WidgetsDialog from "#/client/My/Analytics/widgets-dialog";
+import WidgetsLayout from "#/client/My/Analytics/widgets-layout";
 import AddBoardMenu from "#/client/My/Analytics/add-board-menu";
-import Layout from "#/client/My/Analytics/layout";
 import Iconify from "#/utils/iconify";
 
 export default function Index() {
   const [widgets, setWidgets] = useState(
-    () => JSON.parse(localStorage.getItem("widgets")) ?? []
+    JSON.parse(localStorage.getItem("widgets")) ?? []
   );
   const [boards, setBoards] = useState(
-    () => JSON.parse(localStorage.getItem("boards")) ?? []
+    JSON.parse(localStorage.getItem("boards")) ?? []
   );
   const [anchorEl, setAnchorEl] = useState(null);
 
@@ -31,7 +31,7 @@ export default function Index() {
         currentBoardRef={currentBoardRef}
         widgetsParamsRef={widgetsParamsRef}
       />
-      <Layout
+      <WidgetsLayout
         boards={boards}
         widgets={widgets}
         setBoards={setBoards}

@@ -13,18 +13,22 @@ import moment from "moment";
 
 import Iconify from "#/utils/iconify";
 
-export default memo(function CumulativeProfit({ trades, handleDeleteWidget }) {
+export default memo(function CumulativeProfit({
+  data,
+  isLoading,
+  handleDeleteWidget,
+}) {
   const theme = useTheme();
 
   const counter = useMemo(() => {
-    if (trades !== null) {
+    if (data) {
       const last30DaysStart = moment()
         .subtract(30, "days")
         .startOf("day")
         .valueOf();
       const last30DaysEnd = moment().endOf("day").valueOf();
 
-      const last30DaysTrades = trades.filter((trade) => {
+      const last30DaysTrades = data.filter((trade) => {
         const entryTime = parseInt(trade.entry_time);
         return entryTime >= last30DaysStart && entryTime <= last30DaysEnd;
       });
@@ -59,7 +63,7 @@ export default memo(function CumulativeProfit({ trades, handleDeleteWidget }) {
     } else {
       return [];
     }
-  }, [trades]);
+  }, [data]);
 
   const categories = useMemo(
     () =>
@@ -70,7 +74,9 @@ export default memo(function CumulativeProfit({ trades, handleDeleteWidget }) {
     []
   );
 
-  return counter.length > 0 ? (
+  return isLoading ? (
+    <Skeleton sx={{ height: "100%" }} />
+  ) : (
     <Card sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
       <CardHeader
         title="Кумулятивная прибыль"
@@ -201,7 +207,5 @@ export default memo(function CumulativeProfit({ trades, handleDeleteWidget }) {
         }}
       />
     </Card>
-  ) : (
-    <Skeleton animation="wave" sx={{ height: "100%" }} />
   );
 });

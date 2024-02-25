@@ -7,7 +7,7 @@ import { DateTime } from "luxon";
 
 export function TimeLastNews() {
   const diff = DateTime.now()
-    .diff(DateTime.fromISO("2024-02-20T22:00:00Z", { zone: "Europe/Moscow" }), [
+    .diff(DateTime.fromISO("2024-02-25T16:49:00Z", { zone: "Europe/Moscow" }), [
       "years",
       "months",
       "days",

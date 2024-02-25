@@ -5,11 +5,19 @@ import prisma from "#/utils/prisma";
 
 export async function GET() {
   const s = await getServerSession(authConfig);
-  return Response.json(
-    s !== null
-      ? await prisma.users.findUnique({
-          where: { email: s.user.email },
-        })
-      : null
-  );
+
+  if (s === null) {
+    return Response.json(null);
+  } else {
+    const user = await prisma.users.findUnique({
+      where: { email: s.user.email },
+    });
+
+    return Response.json([
+      user,
+      await prisma.keys.findMany({
+        where: { uid: user.id },
+      }),
+    ]);
+  }
 }

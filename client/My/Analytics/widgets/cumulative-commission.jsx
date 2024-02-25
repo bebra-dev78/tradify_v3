@@ -14,20 +14,21 @@ import moment from "moment";
 import Iconify from "#/utils/iconify";
 
 export default memo(function CumulativeCommission({
-  trades,
+  data,
+  isLoading,
   handleDeleteWidget,
 }) {
   const theme = useTheme();
 
   const counter = useMemo(() => {
-    if (trades !== null) {
+    if (data) {
       const last30DaysStart = moment()
         .subtract(30, "days")
         .startOf("day")
         .valueOf();
       const last30DaysEnd = moment().endOf("day").valueOf();
 
-      const last30DaysTrades = trades.filter((trade) => {
+      const last30DaysTrades = data.filter((trade) => {
         const exitTime = parseInt(trade.exit_time);
         return exitTime >= last30DaysStart && exitTime <= last30DaysEnd;
       });
@@ -40,13 +41,15 @@ export default memo(function CumulativeCommission({
         cumulativeCommission.push(totalCommission.toFixed(3));
       });
 
-      return cumulativeCommission.slice(-30); // Adjust the slice to include the last 30 days
+      return cumulativeCommission.slice(-30);
     } else {
       return [];
     }
-  }, [trades]);
+  }, [data]);
 
-  return counter.length > 0 ? (
+  return isLoading ? (
+    <Skeleton sx={{ height: "100%" }} />
+  ) : (
     <Card sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
       <CardHeader
         title="Кумулятивная комиссия"
@@ -177,7 +180,5 @@ export default memo(function CumulativeCommission({
         }}
       />
     </Card>
-  ) : (
-    <Skeleton animation="wave" sx={{ height: "100%" }} />
   );
 });

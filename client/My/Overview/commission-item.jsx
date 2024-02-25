@@ -7,24 +7,27 @@ import Stack from "@mui/material/Stack";
 import Card from "@mui/material/Card";
 import Box from "@mui/material/Box";
 
+import useSWRImmutable from "swr/immutable";
 import { DateTime } from "luxon";
 import { useMemo } from "react";
 
 import Iconify from "#/utils/iconify";
 
-export default function CommissionItem({ trades }) {
+export default function CommissionItem() {
+  const { data, isLoading } = useSWRImmutable("null");
+
   const [current, diff] = useMemo(() => {
-    if (trades !== null) {
+    if (data) {
       const now = Date.now();
 
-      const counter = trades
-        ?.filter(
+      const counter = data
+        .filter(
           (trade) => now - parseInt(trade.entry_time) <= 24 * 60 * 60 * 1000
         )
         .reduce((acc, trade) => acc + parseFloat(trade.comission), 0);
 
-      const subCounter = trades
-        ?.filter((trade) => {
+      const subCounter = data
+        .filter((trade) => {
           const entryTime = parseInt(trade.entry_time);
           return (
             now - entryTime > 24 * 60 * 60 * 1000 &&
@@ -37,9 +40,11 @@ export default function CommissionItem({ trades }) {
     } else {
       return [0, 0];
     }
-  }, [trades]);
+  }, [data]);
 
-  return trades !== null ? (
+  return isLoading ? (
+    <Skeleton sx={{ height: 166 }} />
+  ) : (
     <Card
       sx={{
         display: "flex",
@@ -98,7 +103,5 @@ export default function CommissionItem({ trades }) {
         </Stack>
       </Box>
     </Card>
-  ) : (
-    <Skeleton animation="wave" sx={{ height: 166 }} />
   );
 }
