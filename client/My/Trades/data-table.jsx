@@ -859,6 +859,7 @@ export default function DataTable({ setData }) {
             onClick={() => {
               setData({
                 exchange: row.exchange,
+                procent: row.procent,
                 start: row.entryTime,
                 end: row.exitTime,
                 symbol: value,

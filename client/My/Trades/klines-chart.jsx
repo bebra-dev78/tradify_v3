@@ -1104,6 +1104,7 @@ export default function KlinesChart({ data, setData }) {
   const aggDealsRef = useRef([]);
 
   const exchange = data?.exchange;
+  const procent = data?.procent;
   const symbol = data?.symbol;
   const start = data?.start;
   const end = data?.end;
@@ -1115,51 +1116,76 @@ export default function KlinesChart({ data, setData }) {
     calc: (kLineDataList) =>
       kLineDataList.map((kLineData) => kLineData.timestamp),
     draw: ({ ctx, visibleRange, indicator, xAxis, yAxis }) => {
-      const result = indicator.result;
+      var result = indicator.result;
+
+      var aggDeals = aggDealsRef.current;
 
       for (let i = visibleRange.from; i < visibleRange.to; i++) {
-        const deals = aggDealsRef.current.filter(
-          (deal) => deal.time === result[i]
-        );
+        var deals = aggDeals.filter((deal) => deal.time === result[i]);
 
         deals.forEach((deal) => {
-          const x = xAxis.convertToPixel(i);
-          const y = yAxis.convertToPixel(deal.price);
+          var x = xAxis.convertToPixel(i);
+          var y = yAxis.convertToPixel(deal.price);
 
-          if (
-            deal === aggDealsRef.current[0] ||
-            deal === aggDealsRef.current[aggDealsRef.current.length - 1]
-          ) {
+          if (deal === aggDeals[0]) {
             new LineFigure({
               attrs: {
                 coordinates: [
                   { x, y },
-                  { x: x + 100000000, y },
+                  { x: x + 10000, y },
                 ],
               },
               styles: {
                 style: "dashed",
                 color: deal.side === "BUY" ? "#00B8D9" : "#FFAB00",
+                dashedValue: [3],
+              },
+            }).draw(ctx);
+          }
+
+          if (deal === aggDeals[aggDeals.length - 1]) {
+            new LineFigure({
+              attrs: {
+                coordinates: [
+                  { x, y },
+                  { x: x + 10000, y },
+                ],
+              },
+              styles: {
+                style: "dashed",
+                color: deal.side === "BUY" ? "#00B8D9" : "#FFAB00",
+                dashedValue: [3],
               },
             }).draw(ctx);
 
+            console.log("deals: ", deals);
+
+            var yOpen = yAxis.convertToPixel(deals[0].price);
+
+            var yClose = yAxis.convertToPixel(deals[deals.length - 1].price);
+
+            var bebra =
+              Math.max(yOpen, yClose) - Math.min(yOpen, yClose) < 20
+                ? Math.max(yOpen, yClose) - 10
+                : (yOpen + yClose) / 2;
+
             new TextFigure({
               attrs: {
-                x: x + 100,
-                y: y - 10,
-                text: parseFloat(deal.realizedPnl).toFixed(3),
+                x: x + 300,
+                y: bebra,
+                text: procent + "%",
                 align: ctx.textAlign,
                 baseline: ctx.textBaseline,
               },
               styles: {
-                style: "stroke_fill",
+                style: "stroke",
                 color: deal.side === "BUY" ? "#00B8D9" : "#FFAB00",
                 family: "inherit",
               },
             }).draw(ctx);
           }
 
-          const direction = deal.side === "BUY" ? 1 : -1;
+          var direction = deal.side === "BUY" ? 1 : -1;
 
           ctx.fillStyle = deal.side === "BUY" ? "#00B8D9" : "#FFAB00";
           ctx.beginPath();
@@ -1169,6 +1195,10 @@ export default function KlinesChart({ data, setData }) {
           ctx.lineTo(x, y);
           ctx.closePath();
           ctx.fill();
+
+          // ctx.moveTo(x + direction * 10, y + direction * 10);
+          // ctx.lineTo(x, y + direction * 10);
+          // ctx.lineTo(x - direction * 10, y + direction * 10);
         });
       }
       return false;
@@ -1181,12 +1211,8 @@ export default function KlinesChart({ data, setData }) {
         let current;
         updatedAggDealsRef.current = {};
 
-        console.log("interval: ", interval);
-
         switch (exchange) {
           case 1:
-            console.log("1");
-
             await Promise.all([
               axios.get(
                 `https://fapi.binance.com/fapi/v1/klines?symbol=${symbol}&startTime=${
@@ -1278,8 +1304,6 @@ export default function KlinesChart({ data, setData }) {
             break;
 
           case 2:
-            console.log("2");
-
             await Promise.all([
               axios
                 .get(

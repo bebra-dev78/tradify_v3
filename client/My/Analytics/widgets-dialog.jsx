@@ -73,7 +73,6 @@ export default memo(function WidgetsDialog({
 }) {
   const { mode } = useMode();
 
-  const [openInfo, setOpenInfo] = useState(false);
   const [open, setOpen] = useState(false);
 
   const current = widgets.filter(
@@ -83,7 +82,9 @@ export default memo(function WidgetsDialog({
   return (
     <>
       <Stack sx={{ justifyContent: "space-between", flexDirection: "row" }}>
-        <Typography variant="h4">Аналитика</Typography>
+        <Typography variant="h4" color="text.primary">
+          Аналитика
+        </Typography>
         <Button
           color="inherit"
           variant="contained"
