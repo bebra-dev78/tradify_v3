@@ -6,7 +6,7 @@ import Form from "#/client/Restore/Reset/token-form";
 
 export const metadata = {
   title: "Сброс пароля | Tradify",
-  description: "💊",
+  description: "Tradify —	сброс пароля аккаунта",
 };
 
 export default function Reset({ params, searchParams }) {

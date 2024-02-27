@@ -13,7 +13,7 @@ import auth_illustration from "#/public/images/auth_illustration.png";
 
 export const metadata = {
   title: "Вход | Tradify",
-  description: "💊",
+  description: "Tradify —	вход в аккаунт",
 };
 
 export default function Login() {

@@ -7,7 +7,7 @@ import Form from "#/client/Restore/form";
 
 export const metadata = {
   title: "Восстановление аккаунта | Tradify",
-  description: "💊",
+  description: "Tradify —	восстановление аккаунта",
 };
 
 export default function Restore() {

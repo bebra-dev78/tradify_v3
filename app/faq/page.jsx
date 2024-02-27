@@ -6,6 +6,8 @@ import Container from "@mui/material/Container";
 import Grid from "@mui/material/Grid";
 import Box from "@mui/material/Box";
 
+import Link from "next/link";
+
 import RootPrimaryHeader from "#/client/Shared/root-primary-header";
 import SmoothAnimation from "#/client/FAQ/smooth-animation";
 import RootOverlay from "#/client/Shared/root-overlay";
@@ -14,7 +16,7 @@ import Iconify from "#/utils/iconify";
 
 export const metadata = {
   title: "FAQ | Tradify",
-  description: "💊",
+  description: "Tradify —	часто задаваемые вопросы",
 };
 
 export default function RootFAQ() {
@@ -50,9 +52,9 @@ export default function RootFAQ() {
           <Grid container xs={3} sx={{ maxWidth: "100% !important" }}>
             <Grid item xs={12} md={12}>
               <Typography
-                variant="subtitle1"
                 gutterBottom
-                sx={{ marginBottom: "16px", color: "text.primary" }}
+                variant="subtitle1"
+                sx={{ marginBottom: "16px", color: "text.secondary" }}
               >
                 Термины
               </Typography>
@@ -77,11 +79,15 @@ export default function RootFAQ() {
                     <Iconify icon="solar:alt-arrow-down-bold-duotone" />
                   }
                 >
-                  <Typography variant="body1">Крипта</Typography>
+                  <Typography variant="body1">Сделки</Typography>
                 </AccordionSummary>
                 <AccordionDetails>
                   <Typography variant="body1">
-                    крипта крипта бабосики
+                    Сделка - это собранные по определённому алгоритму трейды,
+                    которые вы совершаете на бирже. Данные любой сделки
+                    образуются из присвоенных ей трейдов, а границы сделки
+                    (время входа и время выхода) определяются открывающим и
+                    закрывающим позицию трейдами.
                   </Typography>
                 </AccordionDetails>
               </Accordion>
@@ -90,7 +96,7 @@ export default function RootFAQ() {
               <Typography
                 variant="subtitle1"
                 gutterBottom
-                sx={{ marginBottom: "16px", color: "text.primary" }}
+                sx={{ marginBottom: "16px", color: "text.secondary" }}
               >
                 Работа с сервисом
               </Typography>
@@ -100,16 +106,26 @@ export default function RootFAQ() {
                     <Iconify icon="solar:alt-arrow-down-bold-duotone" />
                   }
                 >
-                  <Typography variant="body1">
-                    Как скачать днеуник трецдера?
-                  </Typography>
+                  <Typography variant="body1">Верификация</Typography>
                 </AccordionSummary>
                 <AccordionDetails>
                   <Typography variant="body1">
-                    Occaecati est et illo quibusdam accusamus qui. Incidunt aut
-                    et molestiae ut facere aut. Est quidem iusto praesentium
-                    excepturi harum nihil tenetur facilis. Ut omnis voluptates
-                    nihil accusantium doloribus eaque debitis.
+                    Чтобы верифицировать аккаунт зарегистрируйтесь в сервисе и
+                    перейдите на{" "}
+                    <Link href="https://mail.google.com/" target="_blank">
+                      <Typography
+                        component="strong"
+                        sx={{
+                          "&:hover": { textDecoration: "underline" },
+                          color: "info.main",
+                        }}
+                      >
+                        https://mail.google.com/
+                      </Typography>
+                    </Link>
+                    . Вам будет отправлено письмо с подтверждением и ссылкой,
+                    после нажатия на которую ваш аккаунт станет верифицированным
+                    и вы сможете пользоваться сервисом без ограничений.
                   </Typography>
                 </AccordionDetails>
               </Accordion>
@@ -119,11 +135,28 @@ export default function RootFAQ() {
                     <Iconify icon="solar:alt-arrow-down-bold-duotone" />
                   }
                 >
-                  <Typography variant="body1">Куда нажимать?</Typography>
+                  <Typography variant="body1">
+                    Как добавить API-ключ?
+                  </Typography>
                 </AccordionSummary>
                 <AccordionDetails>
                   <Typography variant="body1">
-                    😄😁😭😵😵‍💫😳🤨🤎😈🙀😼☠😈💨🦾🧑‍🏫🧠💫💫💬👄🧑‍🏫🙋🦹👳🦸🕺🐄🐄🦬🐲🍓🍅🍪🍾🍧🍤🥃🛣🛼⛄🌖⚡🎨👖👛
+                    Перейдите на страницу{" "}
+                    <Link href="my/account/" target="_blank">
+                      <Typography
+                        component="span"
+                        sx={{
+                          "&:hover": { textDecoration: "underline" },
+                          color: "info.main",
+                        }}
+                      >
+                        Аккаунт
+                      </Typography>
+                    </Link>{" "}
+                    и во вкладке "Ключи" добавьте новый API-ключ от
+                    криптовалютной биржи, заполнив поля диалоговой формы. После
+                    ввода ключ добавится и начнётся загрузка сделок от выбранной
+                    биржи за последние 30 дней.
                   </Typography>
                 </AccordionDetails>
               </Accordion>

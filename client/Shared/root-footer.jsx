@@ -42,8 +42,8 @@ export default function RootFooter() {
                 },
               }}
             >
-              Современный днеуник трецдера крипта крипта бабосики 암호 화폐 상인
-              일기 섹스 토마토 푸틴 암호 화폐 상인
+              Современный дневник трейдера, предназначенный для улучшения
+              стратегии вашей торговли.
             </Typography>
             <Stack
               sx={{
@@ -60,7 +60,7 @@ export default function RootFooter() {
                 },
               }}
             >
-              <Typography variant="body2">
+              <Typography variant="body2" color="text.disabled">
                 © 2024. Все права защищены
               </Typography>
             </Stack>
@@ -90,7 +90,7 @@ export default function RootFooter() {
                   },
                 }}
               >
-                <Typography variant="overline">Tradify</Typography>
+                <Typography variant="overline">Telegram</Typography>
                 <Link
                   href="https://t.me/tradifyy"
                   prefetch={false}

@@ -9,7 +9,7 @@ import RootFooter from "#/client/Shared/root-footer";
 
 export const metadata = {
   title: "Политика конфиденциальности | Tradify",
-  description: "💊",
+  description: "Tradify —	политика конфиденциальности",
 };
 
 export default function Policy() {

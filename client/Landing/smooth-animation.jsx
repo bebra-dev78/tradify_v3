@@ -20,10 +20,10 @@ export default function SmoothAnimation() {
         `} 0.3s ease-in-out forwards`,
         }}
       >
-        Трейдинг
+        Начните свою
         <br />
-        Крипта
-        <br />
+        торговлю
+        <br />с{" "}
         <Typography
           variant="h1"
           component="span"
@@ -39,7 +39,7 @@ export default function SmoothAnimation() {
           `} 0.6s ease-in-out forwards`,
           }}
         >
-          Бабосики
+          Tradify
         </Typography>
       </Typography>
       <Typography
@@ -55,7 +55,7 @@ export default function SmoothAnimation() {
         `} 0.8s ease-in-out forwards`,
         }}
       >
-        Современный
+        Революционный
         <Typography
           component="strong"
           sx={{
@@ -72,11 +72,11 @@ export default function SmoothAnimation() {
           }}
         >
           {" "}
-          днеуник трецдера{" "}
+          дневник трейдера
         </Typography>
-        крипта крипта бабосики 암호 화폐 상인 일기 섹스 토마토 푸틴 암호 화폐
-        상인 일기 섹스 토마토 푸틴 암호 화폐 상인 일기 섹스 토마토 푸틴 암호
-        화폐 상인 일기 섹스 토마토 푸틴 암호 화폐 상인 일기 섹스 토마토 푸틴
+        , предназначенный для улучшения стратегии вашей торговли.
+        Регистрируйтесь, подключайте криптобиржи и ведите детальный журнал
+        сделок – всё в одном месте для успешного трейдинга.
       </Typography>
     </>
   );
