@@ -424,6 +424,7 @@ const GridToolbarAddTag = memo(function GridToolbarAddTag() {
                   color="secondary"
                   size="medium"
                   fullWidth
+                  autoFocus
                   inputRef={tagRef}
                   sx={{ mb: 2 }}
                 />

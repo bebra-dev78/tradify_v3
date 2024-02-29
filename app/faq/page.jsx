@@ -142,7 +142,7 @@ export default function RootFAQ() {
                 <AccordionDetails>
                   <Typography variant="body1">
                     Перейдите на страницу{" "}
-                    <Link href="my/account/" target="_blank">
+                    <Link href="/my/account/" target="_blank">
                       <Typography
                         component="span"
                         sx={{
