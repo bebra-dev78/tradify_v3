@@ -568,226 +568,6 @@ const OptionsMenu = memo(function OptionsMenu({
   );
 });
 
-const IntervalButtons = memo(function IntervalButtons({
-  t,
-  symbol,
-  interval,
-  exchange,
-  setInterval,
-  aggDealsRef,
-  updatedAggDealsRef,
-  subscribeActionRef,
-  changeKlinesDataRef,
-  unsubscribeActionRef,
-  lastNewKlineTimestampRef,
-  lastOldKlineTimestampRef,
-}) {
-  const isSmallScreen = useMediaQuery("(max-width:900px)");
-
-  return isSmallScreen ? (
-    <NativeSelect
-      value={interval}
-      onChange={(e) => {
-        const interval = e.target.value;
-        setInterval(interval);
-        (async () => {
-          unsubscribeActionRef.current();
-          switch (exchange) {
-            case 1:
-              await Promise.all([
-                axios.get(
-                  `https://fapi.binance.com/fapi/v1/klines?symbol=${symbol}&startTime=${
-                    t - subDataStartTimestaps[interval]
-                  }&endTime=${
-                    t - subDataEndTimestaps[interval]
-                  }&interval=${interval}&limit=1500`
-                ),
-                axios.get(
-                  `https://fapi.binance.com/fapi/v1/klines?symbol=${symbol}&startTime=${
-                    t - mainDataStartTimestaps[interval]
-                  }&endTime=${
-                    t + mainDataEndTimestaps[interval]
-                  }&interval=${interval}&limit=1500`
-                ),
-              ]).then((r) => {
-                changeKlinesDataRef.current([].concat(...r.map((r) => r.data)));
-                lastNewKlineTimestampRef.current =
-                  t + mainDataEndTimestaps[interval];
-                lastOldKlineTimestampRef.current =
-                  t - subDataStartTimestaps[interval];
-                aggDealsRef.current = Object.values(
-                  updatedAggDealsRef.current
-                ).map((deal) => ({
-                  time: roundTimeToInterval(deal.time, interval),
-                  side: deal.side,
-                  price: deal.avgPrice,
-                  realizedPnl: deal.realizedPnl,
-                }));
-              });
-              break;
-
-            case 2:
-              await Promise.all([
-                axios
-                  .get(
-                    `https://api.bybit.com/v5/market/kline?category=linear&symbol=${symbol}&start=${
-                      t - subDataStartTimestaps[interval]
-                    }&end=${t - subDataEndTimestaps[interval]}&interval=${
-                      convertIntervalsForBibyt[interval]
-                    }&limit=1000`
-                  )
-                  .then((res) => res.data.result.list.reverse()),
-                axios
-                  .get(
-                    `https://api.bybit.com/v5/market/kline?category=linear&symbol=${symbol}&start=${
-                      t - mainDataStartTimestaps[interval]
-                    }&end=${t + mainDataEndTimestaps[interval]}&interval=${
-                      convertIntervalsForBibyt[interval]
-                    }&limit=1000`
-                  )
-                  .then((res) => res.data.result.list.reverse()),
-              ]).then((r) => {
-                changeKlinesDataRef.current(r.flat());
-                lastNewKlineTimestampRef.current =
-                  t + mainDataEndTimestaps[interval];
-                lastOldKlineTimestampRef.current =
-                  t - subDataStartTimestaps[interval];
-                aggDealsRef.current = Object.values(
-                  updatedAggDealsRef.current
-                ).map((deal) => ({
-                  time: roundTimeToInterval(deal.time, interval),
-                  side: deal.side,
-                  price: deal.avgPrice,
-                  realizedPnl: deal.realizedPnl,
-                }));
-              });
-              break;
-
-            default:
-              break;
-          }
-          subscribeActionRef.current(interval);
-        })();
-      }}
-    >
-      <option value="1m" label="1м" />
-      <option value="3m" label="3м" />
-      <option value="5m" label="5м" />
-      <option value="30m" label="30м" />
-      <option value="1h" label="1ч" />
-      <option value="2h" label="2ч" />
-      <option value="6h" label="6ч" />
-      <option value="1d" label="1д" />
-      <option value="3d" label="3д" />
-      <option value="1w" label="1н" />
-      <option value="1M" label="1М" />
-    </NativeSelect>
-  ) : (
-    <FormControl>
-      <RadioGroup
-        row
-        value={interval}
-        onChange={(e) => {
-          const interval = e.target.value;
-          setInterval(interval);
-          (async () => {
-            unsubscribeActionRef.current();
-            switch (exchange) {
-              case 1:
-                await Promise.all([
-                  axios.get(
-                    `https://fapi.binance.com/fapi/v1/klines?symbol=${symbol}&startTime=${
-                      t - subDataStartTimestaps[interval]
-                    }&endTime=${
-                      t - subDataEndTimestaps[interval]
-                    }&interval=${interval}&limit=1500`
-                  ),
-                  axios.get(
-                    `https://fapi.binance.com/fapi/v1/klines?symbol=${symbol}&startTime=${
-                      t - mainDataStartTimestaps[interval]
-                    }&endTime=${
-                      t + mainDataEndTimestaps[interval]
-                    }&interval=${interval}&limit=1500`
-                  ),
-                ]).then((r) => {
-                  changeKlinesDataRef.current(
-                    [].concat(...r.map((r) => r.data))
-                  );
-                  lastNewKlineTimestampRef.current =
-                    t + mainDataEndTimestaps[interval];
-                  lastOldKlineTimestampRef.current =
-                    t - subDataStartTimestaps[interval];
-                  aggDealsRef.current = Object.values(
-                    updatedAggDealsRef.current
-                  ).map((deal) => ({
-                    time: roundTimeToInterval(deal.time, interval),
-                    side: deal.side,
-                    price: deal.avgPrice,
-                    realizedPnl: deal.realizedPnl,
-                  }));
-                });
-                break;
-
-              case 2:
-                await Promise.all([
-                  axios
-                    .get(
-                      `https://api.bybit.com/v5/market/kline?category=linear&symbol=${symbol}&start=${
-                        t - subDataStartTimestaps[interval]
-                      }&end=${t - subDataEndTimestaps[interval]}&interval=${
-                        convertIntervalsForBibyt[interval]
-                      }&limit=1000`
-                    )
-                    .then((res) => res.data.result.list.reverse()),
-                  axios
-                    .get(
-                      `https://api.bybit.com/v5/market/kline?category=linear&symbol=${symbol}&start=${
-                        t - mainDataStartTimestaps[interval]
-                      }&end=${t + mainDataEndTimestaps[interval]}&interval=${
-                        convertIntervalsForBibyt[interval]
-                      }&limit=1000`
-                    )
-                    .then((res) => res.data.result.list.reverse()),
-                ]).then((r) => {
-                  changeKlinesDataRef.current(r.flat());
-                  lastNewKlineTimestampRef.current =
-                    t + mainDataEndTimestaps[interval];
-                  lastOldKlineTimestampRef.current =
-                    t - subDataStartTimestaps[interval];
-                  aggDealsRef.current = Object.values(
-                    updatedAggDealsRef.current
-                  ).map((deal) => ({
-                    time: roundTimeToInterval(deal.time, interval),
-                    side: deal.side,
-                    price: deal.avgPrice,
-                    realizedPnl: deal.realizedPnl,
-                  }));
-                });
-                break;
-
-              default:
-                break;
-            }
-            subscribeActionRef.current(interval);
-          })();
-        }}
-      >
-        <FormControlLabel value="1m" control={<Radio />} label="1м" />
-        <FormControlLabel value="3m" control={<Radio />} label="3м" />
-        <FormControlLabel value="5m" control={<Radio />} label="5м" />
-        <FormControlLabel value="30m" control={<Radio />} label="30м" />
-        <FormControlLabel value="1h" control={<Radio />} label="1ч" />
-        <FormControlLabel value="2h" control={<Radio />} label="2ч" />
-        <FormControlLabel value="6h" control={<Radio />} label="6ч" />
-        <FormControlLabel value="1d" control={<Radio />} label="1д" />
-        <FormControlLabel value="3d" control={<Radio />} label="3д" />
-        <FormControlLabel value="1w" control={<Radio />} label="1н" />
-        <FormControlLabel value="1M" control={<Radio />} label="1М" />
-      </RadioGroup>
-    </FormControl>
-  );
-});
-
 const HeaderIndicators = memo(function HeaderIndicators({
   installMainIndicatorRef,
   removeMainIndicatorRef,
@@ -1079,37 +859,33 @@ const HeaderIndicators = memo(function HeaderIndicators({
 });
 
 export default function KlinesChart({ data, setData }) {
+  const isSmallScreen = useMediaQuery("(max-width:900px)");
   const { keys } = useKeys();
 
-  const [interval, setInterval] = useState("5m");
-
-  const finishOldKlineTimestampRef = useRef(null);
-  const finishNewKlineTimestampRef = useRef(null);
-  const lastNewKlineTimestampRef = useRef(null);
-  const lastOldKlineTimestampRef = useRef(null);
   const installMainIndicatorRef = useRef(null);
   const removeMainIndicatorRef = useRef(null);
   const installSubIndicatorRef = useRef(null);
-  const uploadOldKlinesDataRef = useRef(null);
-  const uploadNewKlinesDataRef = useRef(null);
   const removeSubIndicatorRef = useRef(null);
   const unsubscribeActionRef = useRef(null);
   const changeKlinesDataRef = useRef(null);
   const changeCandleTypeRef = useRef(null);
   const subscribeActionRef = useRef(null);
-  const updatedAggDealsRef = useRef({});
   const addOverlayRef = useRef(null);
   const showGridRef = useRef(null);
-  const loadingRef = useRef(false);
-  const aggDealsRef = useRef([]);
+  const intervalRef = useRef("5m");
 
-  const exchange = data?.exchange;
-  const procent = data?.procent;
-  const symbol = data?.symbol;
-  const start = data?.start;
-  const end = data?.end;
+  var exchange = data?.exchange;
+  var procent = data?.procent;
+  var symbol = data?.symbol;
+  var start = data?.start;
+  var end = data?.end;
 
-  const t = Math.floor(start / 10000) * 10000;
+  var t = Math.floor(start / 10000) * 10000;
+
+  let lastNewKlineTimestamp = null;
+  let lastOldKlineTimestamp = null;
+  let updatedAggDealsRef = {};
+  let aggDealsRef = [];
 
   registerIndicator({
     name: "Buy/Sell",
@@ -1118,16 +894,14 @@ export default function KlinesChart({ data, setData }) {
     draw: ({ ctx, visibleRange, indicator, xAxis, yAxis }) => {
       var result = indicator.result;
 
-      var aggDeals = aggDealsRef.current;
-
       for (let i = visibleRange.from; i < visibleRange.to; i++) {
-        var deals = aggDeals.filter((deal) => deal.time === result[i]);
+        var deals = aggDealsRef.filter((deal) => deal.time === result[i]);
 
         deals.forEach((deal) => {
           var x = xAxis.convertToPixel(i);
           var y = yAxis.convertToPixel(deal.price);
 
-          if (deal === aggDeals[0]) {
+          if (deal === aggDealsRef[0]) {
             new LineFigure({
               attrs: {
                 coordinates: [
@@ -1143,7 +917,7 @@ export default function KlinesChart({ data, setData }) {
             }).draw(ctx);
           }
 
-          if (deal === aggDeals[aggDeals.length - 1]) {
+          if (deal === aggDealsRef[aggDealsRef.length - 1]) {
             new LineFigure({
               attrs: {
                 coordinates: [
@@ -1158,21 +932,17 @@ export default function KlinesChart({ data, setData }) {
               },
             }).draw(ctx);
 
-            console.log("deals: ", deals);
-
             var yOpen = yAxis.convertToPixel(deals[0].price);
 
             var yClose = yAxis.convertToPixel(deals[deals.length - 1].price);
 
-            var bebra =
-              Math.max(yOpen, yClose) - Math.min(yOpen, yClose) < 20
-                ? Math.max(yOpen, yClose) - 10
-                : (yOpen + yClose) / 2;
-
             new TextFigure({
               attrs: {
                 x: x + 300,
-                y: bebra,
+                y:
+                  Math.max(yOpen, yClose) - Math.min(yOpen, yClose) < 20
+                    ? Math.max(yOpen, yClose) - 10
+                    : (yOpen + yClose) / 2,
                 text: procent + "%",
                 align: ctx.textAlign,
                 baseline: ctx.textBaseline,
@@ -1208,8 +978,12 @@ export default function KlinesChart({ data, setData }) {
   useEffect(() => {
     (async () => {
       if (data !== null) {
-        let current;
-        updatedAggDealsRef.current = {};
+        let loading = false;
+
+        var current;
+        var finishNewKlineTimestamp;
+        var finishOldKlineTimestamp;
+        var interval = intervalRef.current;
 
         switch (exchange) {
           case 1:
@@ -1227,10 +1001,10 @@ export default function KlinesChart({ data, setData }) {
             ]).then((r) => {
               current = [].concat(...r.map((r) => r.data));
 
-              lastNewKlineTimestampRef.current = t + 5400000;
-              lastOldKlineTimestampRef.current = t - 6600000;
-              finishNewKlineTimestampRef.current = Date.now();
-              finishOldKlineTimestampRef.current = t - 2388900000;
+              finishNewKlineTimestamp = Date.now();
+              finishOldKlineTimestamp = t - 2388900000;
+              lastNewKlineTimestamp = t + 5400000;
+              lastOldKlineTimestamp = t - 6600000;
 
               const key1 = keys.find((key) => key.exchange === 1);
 
@@ -1261,8 +1035,9 @@ export default function KlinesChart({ data, setData }) {
                         const key = `${deal.side}_${deal.time}`;
 
                         const updatedAggDeals = {
-                          ...updatedAggDealsRef.current,
+                          ...updatedAggDealsRef,
                         };
+
                         if (updatedAggDeals[key]) {
                           updatedAggDeals[key].totalPrice +=
                             parseFloat(deal.price) * parseFloat(deal.qty);
@@ -1282,22 +1057,17 @@ export default function KlinesChart({ data, setData }) {
                             avgPrice: parseFloat(deal.price),
                           };
                         }
-                        updatedAggDealsRef.current = updatedAggDeals;
+                        updatedAggDealsRef = updatedAggDeals;
                       });
 
-                      console.log(
-                        "сделки для графика: ",
-                        updatedAggDealsRef.current
+                      aggDealsRef = Object.values(updatedAggDealsRef).map(
+                        (deal) => ({
+                          time: roundTimeToInterval(deal.time, interval),
+                          side: deal.side,
+                          price: deal.avgPrice,
+                          realizedPnl: deal.realizedPnl,
+                        })
                       );
-
-                      aggDealsRef.current = Object.values(
-                        updatedAggDealsRef.current
-                      ).map((deal) => ({
-                        time: roundTimeToInterval(deal.time, interval),
-                        side: deal.side,
-                        price: deal.avgPrice,
-                        realizedPnl: deal.realizedPnl,
-                      }));
                     });
                 });
             });
@@ -1326,82 +1096,85 @@ export default function KlinesChart({ data, setData }) {
             ]).then((r) => {
               current = r.flat();
 
-              lastNewKlineTimestampRef.current = t + 5400000;
-              lastOldKlineTimestampRef.current = t - 6600000;
-              finishOldKlineTimestampRef.current = t - 2388900000;
-              finishNewKlineTimestampRef.current = new Date().getTime();
+              lastNewKlineTimestamp = t + 5400000;
+              lastOldKlineTimestamp = t - 6600000;
+              finishNewKlineTimestamp = Date.now();
+              finishOldKlineTimestamp = t - 2388900000;
 
               const key2 = keys.find((key) => key.exchange === 2);
 
+              var bybit = [];
+
               axios
                 .get("https://api.bybit.com/v5/market/time")
-                .then(({ data }) => {
-                  axios
-                    .get(
-                      `https://api.bybit.com/v5/execution/list?category=linear&limit=100&startTime=${start}&endTime=${end}&symbol=${symbol}`,
-                      {
-                        headers: {
-                          "X-BAPI-SIGN": crypto
-                            .createHmac("sha256", key2.secret_key)
-                            .update(
-                              data.time +
-                                key2.api_key +
-                                60000 +
-                                `category=linear&limit=100&startTime=${start}&endTime=${end}&symbol=${symbol}`
-                            )
-                            .digest("hex"),
-                          "X-BAPI-API-KEY": key2.api_key,
-                          "X-BAPI-TIMESTAMP": data.time,
-                          "X-BAPI-RECV-WINDOW": 60000,
-                        },
-                      }
-                    )
-                    .then(({ data }) => {
-                      data.result.list.forEach((deal) => {
-                        const key = `${deal.side === "Buy" ? "BUY" : "SELL"}_${
-                          deal.execTime
-                        }`;
+                .then(async ({ data: { time } }) => {
+                  let cursor = "";
 
-                        const updatedAggDeals = {
-                          ...updatedAggDealsRef.current,
-                        };
-                        if (updatedAggDeals[key]) {
-                          updatedAggDeals[key].totalPrice +=
-                            parseFloat(deal.execPrice) *
-                            parseFloat(deal.execQty);
-                          updatedAggDeals[key].totalQty += parseFloat(
-                            deal.execQty
-                          );
-                          updatedAggDeals[key].avgPrice =
-                            updatedAggDeals[key].totalPrice /
-                            updatedAggDeals[key].totalQty;
-                        } else {
-                          updatedAggDeals[key] = {
-                            symbol: deal.symbol,
-                            side: deal.side === "Buy" ? "BUY" : "SELL",
-                            time: parseInt(deal.execTime),
-                            realizedPnl: parseFloat(deal.closedSize),
-                            totalPrice:
-                              parseFloat(deal.execPrice) *
-                              parseFloat(deal.execQty),
-                            totalQty: parseFloat(deal.execQty),
-                            avgPrice: parseFloat(deal.execPrice),
-                          };
+                  do {
+                    await axios
+                      .get(
+                        `https://api.bybit.com/v5/execution/list?category=linear&symbol=${symbol}&limit=100&startTime=${start}&endTime=${end}&cursor=${cursor}`,
+                        {
+                          headers: {
+                            "X-BAPI-SIGN": crypto
+                              .createHmac("sha256", key2.secret_key)
+                              .update(
+                                time +
+                                  key2.api_key +
+                                  60000 +
+                                  `category=linear&symbol=${symbol}&limit=100&startTime=${start}&endTime=${end}&cursor=${cursor}`
+                              )
+                              .digest("hex"),
+                            "X-BAPI-API-KEY": key2.api_key,
+                            "X-BAPI-TIMESTAMP": time,
+                            "X-BAPI-RECV-WINDOW": 60000,
+                          },
                         }
-                        updatedAggDealsRef.current = updatedAggDeals;
+                      )
+                      .then(({ data }) => {
+                        cursor = data.result.nextPageCursor;
+                        bybit.push(data.result.list);
                       });
+                  } while (cursor !== "");
 
-                      console.log("сделки для графика (bybit): ", data);
+                  bybit.flat().forEach((deal) => {
+                    const key = `${deal.side === "Buy" ? "BUY" : "SELL"}_${
+                      deal.execTime
+                    }`;
 
-                      aggDealsRef.current = Object.values(
-                        updatedAggDealsRef.current
-                      ).map((deal) => ({
-                        time: roundTimeToInterval(deal.time, interval),
-                        side: deal.side,
-                        price: deal.avgPrice,
-                        realizedPnl: deal.realizedPnl,
-                      }));
-                    });
+                    const updatedAggDeals = {
+                      ...updatedAggDealsRef,
+                    };
+
+                    if (updatedAggDeals[key]) {
+                      updatedAggDeals[key].totalPrice +=
+                        parseFloat(deal.execPrice) * parseFloat(deal.execQty);
+                      updatedAggDeals[key].totalQty += parseFloat(deal.execQty);
+                      updatedAggDeals[key].avgPrice =
+                        updatedAggDeals[key].totalPrice /
+                        updatedAggDeals[key].totalQty;
+                    } else {
+                      updatedAggDeals[key] = {
+                        side: deal.side === "Buy" ? "BUY" : "SELL",
+                        time: parseInt(deal.execTime),
+                        realizedPnl: parseFloat(deal.closedSize),
+                        totalPrice:
+                          parseFloat(deal.execPrice) * parseFloat(deal.execQty),
+                        totalQty: parseFloat(deal.execQty),
+                        avgPrice: parseFloat(deal.execPrice),
+                      };
+                    }
+                    updatedAggDealsRef = updatedAggDeals;
+                  });
+
+                  aggDealsRef = Object.values(updatedAggDealsRef).map(
+                    (deal) => ({
+                      time: roundTimeToInterval(deal.time, interval),
+                      side: deal.side,
+                      price: deal.avgPrice,
+                      realizedPnl: deal.realizedPnl,
+                    })
+                  );
                 });
             });
             break;
@@ -1427,25 +1200,34 @@ export default function KlinesChart({ data, setData }) {
         chart.subscribeAction("onVisibleRangeChange", (data) => {
           if (
             data.from < 1 &&
-            loadingRef.current === false &&
-            lastOldKlineTimestampRef.current >
-              finishOldKlineTimestampRef.current
+            loading === false &&
+            lastOldKlineTimestamp > finishOldKlineTimestamp
           ) {
             (async () => {
-              loadingRef.current = true;
+              loading = true;
               switch (exchange) {
                 case 1:
                   await axios
                     .get(
                       `https://fapi.binance.com/fapi/v1/klines?symbol=${symbol}&startTime=${
-                        lastOldKlineTimestampRef.current - 33000000
+                        lastOldKlineTimestamp - 33000000
                       }&endTime=${
-                        lastOldKlineTimestampRef.current - 1
+                        lastOldKlineTimestamp - 1
                       }&interval=${interval}&limit=1500`
                     )
                     .then((r) => {
-                      uploadOldKlinesDataRef.current(r.data);
-                      lastOldKlineTimestampRef.current -= 33000000;
+                      chart.applyMoreData(
+                        r.data.map((kline) => ({
+                          timestamp: parseFloat(kline[0]),
+                          open: parseFloat(kline[1]),
+                          high: parseFloat(kline[2]),
+                          low: parseFloat(kline[3]),
+                          close: parseFloat(kline[4]),
+                          volume: parseFloat(kline[5]),
+                          turnover: parseFloat(kline[7]),
+                        }))
+                      );
+                      lastOldKlineTimestamp -= 33000000;
                     });
                   break;
 
@@ -1453,45 +1235,62 @@ export default function KlinesChart({ data, setData }) {
                   await axios
                     .get(
                       `https://api.bybit.com/v5/market/kline?category=linear&symbol=${symbol}&start=${
-                        lastOldKlineTimestampRef.current - 33000000
-                      }&end=${lastOldKlineTimestampRef.current - 1}&interval=${
+                        lastOldKlineTimestamp - 33000000
+                      }&end=${lastOldKlineTimestamp - 1}&interval=${
                         convertIntervalsForBibyt[interval]
                       }&limit=1000`
                     )
                     .then((r) => {
-                      uploadOldKlinesDataRef.current(
-                        r.data.result.list.reverse()
+                      chart.applyMoreData(
+                        r.data.result.list.reverse().map((kline) => ({
+                          timestamp: parseFloat(kline[0]),
+                          open: parseFloat(kline[1]),
+                          high: parseFloat(kline[2]),
+                          low: parseFloat(kline[3]),
+                          close: parseFloat(kline[4]),
+                          volume: parseFloat(kline[5]),
+                          turnover: parseFloat(kline[7]),
+                        }))
                       );
-                      lastOldKlineTimestampRef.current -= 33000000;
+                      lastOldKlineTimestamp -= 33000000;
                     });
                   break;
 
                 default:
                   break;
               }
-              loadingRef.current = false;
+              loading = false;
             })();
           } else if (
             data.realFrom > data.from &&
-            loadingRef.current === false &&
-            lastNewKlineTimestampRef.current <
-              finishNewKlineTimestampRef.current
+            loading === false &&
+            lastNewKlineTimestamp < finishNewKlineTimestamp
           ) {
             (async () => {
-              loadingRef.current = true;
+              loading = true;
               switch (exchange) {
                 case 1:
                   await axios
                     .get(
                       `https://fapi.binance.com/fapi/v1/klines?symbol=${symbol}&startTime=${
-                        lastNewKlineTimestampRef.current + 1
+                        lastNewKlineTimestamp + 1
                       }&endTime=${
-                        lastNewKlineTimestampRef.current + 27000000
-                      }&interval=${interval}&limit=1500`
+                        lastNewKlineTimestamp + 27000000
+                      }&interval=${interval}&limit=1000`
                     )
                     .then((r) => {
-                      uploadNewKlinesDataRef.current(r.data);
-                      lastNewKlineTimestampRef.current += 27000000;
+                      r.data.forEach((kline) => {
+                        chart.updateData({
+                          timestamp: kline[0],
+                          open: kline[1],
+                          high: kline[2],
+                          low: kline[3],
+                          close: kline[4],
+                          volume: kline[5],
+                          turnover: kline[7],
+                        });
+                      });
+                      lastNewKlineTimestamp += 27000000;
                     });
                   break;
 
@@ -1499,25 +1298,31 @@ export default function KlinesChart({ data, setData }) {
                   await axios
                     .get(
                       `https://api.bybit.com/v5/market/kline?category=linear&symbol=${symbol}&start=${
-                        lastNewKlineTimestampRef.current + 1
-                      }&end=${
-                        lastNewKlineTimestampRef.current + 27000000
-                      }&interval=${
+                        lastNewKlineTimestamp + 1
+                      }&end=${lastNewKlineTimestamp + 27000000}&interval=${
                         convertIntervalsForBibyt[interval]
                       }&limit=1000`
                     )
                     .then((r) => {
-                      uploadNewKlinesDataRef.current(
-                        r.data.result.list.reverse()
-                      );
-                      lastNewKlineTimestampRef.current += 27000000;
+                      r.data.result.list.reverse().forEach((kline) => {
+                        chart.updateData({
+                          timestamp: parseFloat(kline[0]),
+                          open: parseFloat(kline[1]),
+                          high: parseFloat(kline[2]),
+                          low: parseFloat(kline[3]),
+                          close: parseFloat(kline[4]),
+                          volume: parseFloat(kline[5]),
+                          turnover: parseFloat(kline[7]),
+                        });
+                      });
+                      lastNewKlineTimestamp += 27000000;
                     });
                   break;
 
                 default:
                   break;
               }
-              loadingRef.current = false;
+              loading = false;
             })();
           }
         });
@@ -1651,27 +1456,34 @@ export default function KlinesChart({ data, setData }) {
           chart.subscribeAction("onVisibleRangeChange", (data) => {
             if (
               data.from < 1 &&
-              loadingRef.current === false &&
-              lastOldKlineTimestampRef.current >
-                finishOldKlineTimestampRef.current
+              loading === false &&
+              lastOldKlineTimestamp > finishOldKlineTimestamp
             ) {
               (async () => {
-                loadingRef.current = true;
+                loading = true;
                 switch (exchange) {
                   case 1:
                     await axios
                       .get(
                         `https://fapi.binance.com/fapi/v1/klines?symbol=${symbol}&startTime=${
-                          lastOldKlineTimestampRef.current -
-                          subDataStartTimestaps[params]
+                          lastOldKlineTimestamp - subDataStartTimestaps[params]
                         }&endTime=${
-                          lastOldKlineTimestampRef.current - 1
-                        }&interval=${params}&limit=1500`
+                          lastOldKlineTimestamp - 1
+                        }&interval=${params}&limit=1000`
                       )
                       .then((r) => {
-                        uploadOldKlinesDataRef.current(r.data);
-                        lastOldKlineTimestampRef.current -=
-                          subDataStartTimestaps[params];
+                        chart.applyMoreData(
+                          r.data.map((kline) => ({
+                            timestamp: parseFloat(kline[0]),
+                            open: parseFloat(kline[1]),
+                            high: parseFloat(kline[2]),
+                            low: parseFloat(kline[3]),
+                            close: parseFloat(kline[4]),
+                            volume: parseFloat(kline[5]),
+                            turnover: parseFloat(kline[7]),
+                          }))
+                        );
+                        lastOldKlineTimestamp -= subDataStartTimestaps[params];
                       });
                     break;
 
@@ -1679,51 +1491,62 @@ export default function KlinesChart({ data, setData }) {
                     await axios
                       .get(
                         `https://api.bybit.com/v5/market/kline?category=linear&symbol=${symbol}&start=${
-                          lastOldKlineTimestampRef.current -
-                          subDataStartTimestaps[params]
-                        }&end=${
-                          lastOldKlineTimestampRef.current - 1
-                        }&interval=${
+                          lastOldKlineTimestamp - subDataStartTimestaps[params]
+                        }&end=${lastOldKlineTimestamp - 1}&interval=${
                           convertIntervalsForBibyt[params]
                         }&limit=1000`
                       )
                       .then((r) => {
-                        uploadOldKlinesDataRef.current(
-                          r.data.result.list.reverse()
+                        chart.applyMoreData(
+                          r.data.result.list.reverse().map((kline) => ({
+                            timestamp: parseFloat(kline[0]),
+                            open: parseFloat(kline[1]),
+                            high: parseFloat(kline[2]),
+                            low: parseFloat(kline[3]),
+                            close: parseFloat(kline[4]),
+                            volume: parseFloat(kline[5]),
+                            turnover: parseFloat(kline[7]),
+                          }))
                         );
-                        lastOldKlineTimestampRef.current -=
-                          subDataStartTimestaps[params];
+                        lastOldKlineTimestamp -= subDataStartTimestaps[params];
                       });
                     break;
 
                   default:
                     break;
                 }
-                loadingRef.current = false;
+                loading = false;
               })();
             } else if (
               data.realFrom > data.from &&
-              loadingRef.current === false &&
-              lastNewKlineTimestampRef.current <
-                finishNewKlineTimestampRef.current
+              loading === false &&
+              lastNewKlineTimestamp < finishNewKlineTimestamp
             ) {
               (async () => {
-                loadingRef.current = true;
+                loading = true;
                 switch (exchange) {
                   case 1:
                     await axios
                       .get(
                         `https://fapi.binance.com/fapi/v1/klines?symbol=${symbol}&startTime=${
-                          lastNewKlineTimestampRef.current + 1
+                          lastNewKlineTimestamp + 1
                         }&endTime=${
-                          lastNewKlineTimestampRef.current +
-                          mainDataEndTimestaps[params]
+                          lastNewKlineTimestamp + mainDataEndTimestaps[params]
                         }&interval=${params}&limit=1500`
                       )
                       .then((r) => {
-                        uploadNewKlinesDataRef.current(r.data);
-                        lastNewKlineTimestampRef.current +=
-                          mainDataEndTimestaps[params];
+                        r.data.forEach((kline) => {
+                          chart.updateData({
+                            timestamp: parseFloat(kline[0]),
+                            open: parseFloat(kline[1]),
+                            high: parseFloat(kline[2]),
+                            low: parseFloat(kline[3]),
+                            close: parseFloat(kline[4]),
+                            volume: parseFloat(kline[5]),
+                            turnover: parseFloat(kline[7]),
+                          });
+                        });
+                        lastNewKlineTimestamp += mainDataEndTimestaps[params];
                       });
                     break;
 
@@ -1731,27 +1554,33 @@ export default function KlinesChart({ data, setData }) {
                     await axios
                       .get(
                         `https://api.bybit.com/v5/market/kline?category=linear&symbol=${symbol}&start=${
-                          lastNewKlineTimestampRef.current + 1
+                          lastNewKlineTimestamp + 1
                         }&end=${
-                          lastNewKlineTimestampRef.current +
-                          mainDataEndTimestaps[params]
+                          lastNewKlineTimestamp + mainDataEndTimestaps[params]
                         }&interval=${
                           convertIntervalsForBibyt[params]
                         }&limit=1000`
                       )
                       .then((r) => {
-                        uploadNewKlinesDataRef.current(
-                          r.data.result.list.reverse()
-                        );
-                        lastNewKlineTimestampRef.current +=
-                          mainDataEndTimestaps[params];
+                        r.data.result.list.reverse().forEach((kline) => {
+                          chart.updateData({
+                            timestamp: parseFloat(kline[0]),
+                            open: parseFloat(kline[1]),
+                            high: parseFloat(kline[2]),
+                            low: parseFloat(kline[3]),
+                            close: parseFloat(kline[4]),
+                            volume: parseFloat(kline[5]),
+                            turnover: parseFloat(kline[7]),
+                          });
+                        });
+                        lastNewKlineTimestamp += mainDataEndTimestaps[params];
                       });
                     break;
 
                   default:
                     break;
                 }
-                loadingRef.current = false;
+                loading = false;
               })();
             }
           });
@@ -1786,45 +1615,6 @@ export default function KlinesChart({ data, setData }) {
             }))
           );
         };
-
-        uploadOldKlinesDataRef.current = (params) => {
-          chart.applyMoreData(
-            params.map((kline) => ({
-              timestamp: parseFloat(kline[0]),
-              open: parseFloat(kline[1]),
-              high: parseFloat(kline[2]),
-              low: parseFloat(kline[3]),
-              close: parseFloat(kline[4]),
-              volume: parseFloat(kline[5]),
-              turnover: parseFloat(kline[7]),
-            }))
-          );
-        };
-
-        uploadNewKlinesDataRef.current = (params) => {
-          const oldData = chart.getDataList();
-          const newData = params.map((kline) => ({
-            timestamp: parseFloat(kline[0]),
-            open: parseFloat(kline[1]),
-            high: parseFloat(kline[2]),
-            low: parseFloat(kline[3]),
-            close: parseFloat(kline[4]),
-            volume: parseFloat(kline[5]),
-            turnover: parseFloat(kline[7]),
-          }));
-          const sumData = [...oldData, ...newData];
-          chart.applyNewData(
-            sumData.map((kline) => ({
-              timestamp: kline.timestamp,
-              open: kline.open,
-              high: kline.high,
-              low: kline.low,
-              close: kline.close,
-              volume: kline.volume,
-              turnover: kline.turnover,
-            }))
-          );
-        };
       }
     })();
     return () => {
@@ -1851,21 +1641,217 @@ export default function KlinesChart({ data, setData }) {
             justifyContent: "space-between",
           }}
         >
-          <CardHeader title={symbol} />
-          <IntervalButtons
-            t={t}
-            symbol={symbol}
-            interval={interval}
-            exchange={exchange}
-            setInterval={setInterval}
-            aggDealsRef={aggDealsRef}
-            updatedAggDealsRef={updatedAggDealsRef}
-            subscribeActionRef={subscribeActionRef}
-            changeKlinesDataRef={changeKlinesDataRef}
-            unsubscribeActionRef={unsubscribeActionRef}
-            lastNewKlineTimestampRef={lastNewKlineTimestampRef}
-            lastOldKlineTimestampRef={lastOldKlineTimestampRef}
-          />
+          <CardHeader title={procent + "% " + symbol} />
+          {isSmallScreen ? (
+            <NativeSelect
+              defaultValue={intervalRef.current}
+              onChange={(e) => {
+                const interval = e.target.value;
+                intervalRef.current = interval;
+                (async () => {
+                  unsubscribeActionRef.current();
+                  switch (exchange) {
+                    case 1:
+                      await Promise.all([
+                        axios.get(
+                          `https://fapi.binance.com/fapi/v1/klines?symbol=${symbol}&startTime=${
+                            t - subDataStartTimestaps[interval]
+                          }&endTime=${
+                            t - subDataEndTimestaps[interval]
+                          }&interval=${interval}&limit=1500`
+                        ),
+                        axios.get(
+                          `https://fapi.binance.com/fapi/v1/klines?symbol=${symbol}&startTime=${
+                            t - mainDataStartTimestaps[interval]
+                          }&endTime=${
+                            t + mainDataEndTimestaps[interval]
+                          }&interval=${interval}&limit=1500`
+                        ),
+                      ]).then((r) => {
+                        changeKlinesDataRef.current(
+                          [].concat(...r.map((r) => r.data))
+                        );
+                        lastNewKlineTimestamp =
+                          t + mainDataEndTimestaps[interval];
+                        lastOldKlineTimestamp =
+                          t - subDataStartTimestaps[interval];
+                        aggDealsRef = Object.values(updatedAggDealsRef).map(
+                          (deal) => ({
+                            time: roundTimeToInterval(deal.time, interval),
+                            side: deal.side,
+                            price: deal.avgPrice,
+                            realizedPnl: deal.realizedPnl,
+                          })
+                        );
+                      });
+                      break;
+
+                    case 2:
+                      await Promise.all([
+                        axios
+                          .get(
+                            `https://api.bybit.com/v5/market/kline?category=linear&symbol=${symbol}&start=${
+                              t - subDataStartTimestaps[interval]
+                            }&end=${
+                              t - subDataEndTimestaps[interval]
+                            }&interval=${
+                              convertIntervalsForBibyt[interval]
+                            }&limit=1000`
+                          )
+                          .then((r) => r.data.result.list.reverse()),
+                        axios
+                          .get(
+                            `https://api.bybit.com/v5/market/kline?category=linear&symbol=${symbol}&start=${
+                              t - mainDataStartTimestaps[interval]
+                            }&end=${
+                              t + mainDataEndTimestaps[interval]
+                            }&interval=${
+                              convertIntervalsForBibyt[interval]
+                            }&limit=1000`
+                          )
+                          .then((r) => r.data.result.list.reverse()),
+                      ]).then((r) => {
+                        changeKlinesDataRef.current(r.flat());
+                        lastNewKlineTimestamp =
+                          t + mainDataEndTimestaps[interval];
+                        lastOldKlineTimestamp =
+                          t - subDataStartTimestaps[interval];
+                        aggDealsRef = Object.values(updatedAggDealsRef).map(
+                          (deal) => ({
+                            time: roundTimeToInterval(deal.time, interval),
+                            side: deal.side,
+                            price: deal.avgPrice,
+                            realizedPnl: deal.realizedPnl,
+                          })
+                        );
+                      });
+                      break;
+
+                    default:
+                      break;
+                  }
+                  subscribeActionRef.current(interval);
+                })();
+              }}
+            >
+              <option value="1m" label="1м" />
+              <option value="3m" label="3м" />
+              <option value="5m" label="5м" />
+              <option value="30m" label="30м" />
+              <option value="1h" label="1ч" />
+              <option value="2h" label="2ч" />
+              <option value="6h" label="6ч" />
+              <option value="1d" label="1д" />
+              <option value="3d" label="3д" />
+              <option value="1w" label="1н" />
+            </NativeSelect>
+          ) : (
+            <FormControl>
+              <RadioGroup
+                row
+                defaultValue={intervalRef.current}
+                onChange={(e) => {
+                  const interval = e.target.value;
+                  intervalRef.current = interval;
+                  (async () => {
+                    unsubscribeActionRef.current();
+                    switch (exchange) {
+                      case 1:
+                        await Promise.all([
+                          axios.get(
+                            `https://fapi.binance.com/fapi/v1/klines?symbol=${symbol}&startTime=${
+                              t - subDataStartTimestaps[interval]
+                            }&endTime=${
+                              t - subDataEndTimestaps[interval]
+                            }&interval=${interval}&limit=1500`
+                          ),
+                          axios.get(
+                            `https://fapi.binance.com/fapi/v1/klines?symbol=${symbol}&startTime=${
+                              t - mainDataStartTimestaps[interval]
+                            }&endTime=${
+                              t + mainDataEndTimestaps[interval]
+                            }&interval=${interval}&limit=1500`
+                          ),
+                        ]).then((r) => {
+                          changeKlinesDataRef.current(
+                            [].concat(...r.map((r) => r.data))
+                          );
+                          lastNewKlineTimestamp =
+                            t + mainDataEndTimestaps[interval];
+                          lastOldKlineTimestamp =
+                            t - subDataStartTimestaps[interval];
+                          aggDealsRef = Object.values(updatedAggDealsRef).map(
+                            (deal) => ({
+                              time: roundTimeToInterval(deal.time, interval),
+                              side: deal.side,
+                              price: deal.avgPrice,
+                              realizedPnl: deal.realizedPnl,
+                            })
+                          );
+                        });
+                        break;
+
+                      case 2:
+                        await Promise.all([
+                          axios
+                            .get(
+                              `https://api.bybit.com/v5/market/kline?category=linear&symbol=${symbol}&start=${
+                                t - subDataStartTimestaps[interval]
+                              }&end=${
+                                t - subDataEndTimestaps[interval]
+                              }&interval=${
+                                convertIntervalsForBibyt[interval]
+                              }&limit=1000`
+                            )
+                            .then((res) => res.data.result.list.reverse()),
+                          axios
+                            .get(
+                              `https://api.bybit.com/v5/market/kline?category=linear&symbol=${symbol}&start=${
+                                t - mainDataStartTimestaps[interval]
+                              }&end=${
+                                t + mainDataEndTimestaps[interval]
+                              }&interval=${
+                                convertIntervalsForBibyt[interval]
+                              }&limit=1000`
+                            )
+                            .then((res) => res.data.result.list.reverse()),
+                        ]).then((r) => {
+                          changeKlinesDataRef.current(r.flat());
+                          lastNewKlineTimestamp =
+                            t + mainDataEndTimestaps[interval];
+                          lastOldKlineTimestamp =
+                            t - subDataStartTimestaps[interval];
+                          aggDealsRef = Object.values(updatedAggDealsRef).map(
+                            (deal) => ({
+                              time: roundTimeToInterval(deal.time, interval),
+                              side: deal.side,
+                              price: deal.avgPrice,
+                              realizedPnl: deal.realizedPnl,
+                            })
+                          );
+                        });
+                        break;
+
+                      default:
+                        break;
+                    }
+                    subscribeActionRef.current(interval);
+                  })();
+                }}
+              >
+                <FormControlLabel value="1m" control={<Radio />} label="1м" />
+                <FormControlLabel value="3m" control={<Radio />} label="3м" />
+                <FormControlLabel value="5m" control={<Radio />} label="5м" />
+                <FormControlLabel value="30m" control={<Radio />} label="30м" />
+                <FormControlLabel value="1h" control={<Radio />} label="1ч" />
+                <FormControlLabel value="2h" control={<Radio />} label="2ч" />
+                <FormControlLabel value="6h" control={<Radio />} label="6ч" />
+                <FormControlLabel value="1d" control={<Radio />} label="1д" />
+                <FormControlLabel value="3d" control={<Radio />} label="3д" />
+                <FormControlLabel value="1w" control={<Radio />} label="1н" />
+              </RadioGroup>
+            </FormControl>
+          )}
           <HeaderIndicators
             installMainIndicatorRef={installMainIndicatorRef}
             removeMainIndicatorRef={removeMainIndicatorRef}

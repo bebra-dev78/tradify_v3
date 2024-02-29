@@ -35,7 +35,7 @@ export default function Landing() {
           <Overlay>
             <Container>
               <Grid container sx={{ alignItems: "center" }}>
-                <Grid item xs={12} md={6}>
+                <Grid xs={12} md={6}>
                   <Stack
                     sx={{
                       m: "auto",
@@ -76,7 +76,7 @@ export default function Landing() {
                     </Stack>
                   </Stack>
                 </Grid>
-                <Grid item xs={0} md={6}>
+                <Grid xs={0} md={6}>
                   <Box
                     sx={{
                       mt: "40px",
