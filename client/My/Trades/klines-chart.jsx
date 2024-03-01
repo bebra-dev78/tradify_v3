@@ -31,6 +31,7 @@ import crypto from "crypto";
 import axios from "axios";
 
 import Annotations from "#/client/My/Trades/tools/annotations";
+import { useMode } from "#/client/Global/theme-registry";
 import Figures from "#/client/My/Trades/tools/figures";
 import Lineup from "#/client/My/Trades/tools/lineup";
 import Lines from "#/client/My/Trades/tools/lines";
@@ -478,7 +479,8 @@ const TextFigure = getFigureClass("text");
 const OptionsMenu = memo(function OptionsMenu({
   changeCandleTypeRef,
   showGridRef,
-  setData,
+  setActivate,
+  dataRef,
 }) {
   const [openDialog, setOpenDialog] = useState(false);
 
@@ -558,7 +560,10 @@ const OptionsMenu = memo(function OptionsMenu({
         <IconButton
           color="error"
           onClick={() => {
-            setData(null);
+            setActivate({ status: false });
+            setTimeout(() => {
+              dataRef.current = null;
+            }, 1000);
           }}
         >
           <CloseRoundedIcon />
@@ -573,7 +578,7 @@ const HeaderIndicators = memo(function HeaderIndicators({
   removeMainIndicatorRef,
   installSubIndicatorRef,
   removeSubIndicatorRef,
-  data,
+  activate,
 }) {
   const isSmallScreen = useMediaQuery("(max-width:900px)");
 
@@ -582,7 +587,7 @@ const HeaderIndicators = memo(function HeaderIndicators({
 
   useEffect(() => {
     setIndicators(["Buy/Sell"]);
-  }, [data]);
+  }, [activate]);
 
   return (
     <>
@@ -858,9 +863,10 @@ const HeaderIndicators = memo(function HeaderIndicators({
   );
 });
 
-export default function KlinesChart({ data, setData }) {
+export default function KlinesChart({ dataRef, activate, setActivate }) {
   const isSmallScreen = useMediaQuery("(max-width:900px)");
   const { keys } = useKeys();
+  const { mode } = useMode();
 
   const installMainIndicatorRef = useRef(null);
   const removeMainIndicatorRef = useRef(null);
@@ -874,11 +880,11 @@ export default function KlinesChart({ data, setData }) {
   const showGridRef = useRef(null);
   const intervalRef = useRef("5m");
 
-  var exchange = data?.exchange;
-  var procent = data?.procent;
-  var symbol = data?.symbol;
-  var start = data?.start;
-  var end = data?.end;
+  var exchange = dataRef.current?.exchange;
+  var procent = dataRef.current?.procent;
+  var symbol = dataRef.current?.symbol;
+  var start = dataRef.current?.start;
+  var end = dataRef.current?.end;
 
   var t = Math.floor(start / 10000) * 10000;
 
@@ -975,15 +981,21 @@ export default function KlinesChart({ data, setData }) {
     },
   });
 
+  const open = activate.status !== false;
+
   useEffect(() => {
     (async () => {
-      if (data !== null) {
+      if (open) {
         let loading = false;
 
         var current;
         var finishNewKlineTimestamp;
         var finishOldKlineTimestamp;
         var interval = intervalRef.current;
+
+        var chart = init("chart");
+
+        chart.clearData();
 
         switch (exchange) {
           case 1:
@@ -1183,8 +1195,6 @@ export default function KlinesChart({ data, setData }) {
             break;
         }
 
-        const chart = init("chart");
-
         chart.applyNewData(
           current.map((kline) => ({
             timestamp: parseFloat(kline[0]),
@@ -1196,6 +1206,10 @@ export default function KlinesChart({ data, setData }) {
             turnover: parseFloat(kline[7]),
           }))
         );
+
+        chart.scrollToTimestamp(start);
+
+        chart.setOffsetRightDistance(200);
 
         chart.subscribeAction("onVisibleRangeChange", (data) => {
           if (
@@ -1335,7 +1349,7 @@ export default function KlinesChart({ data, setData }) {
 
         chart.setStyles({
           grid: {
-            show: JSON.parse(localStorage.getItem("statusGrid")) ?? true,
+            show: JSON.parse(localStorage.getItem("statusGrid")) ?? false,
             horizontal: {
               color: "rgba(145, 158, 171, 0.2)",
             },
@@ -1620,18 +1634,22 @@ export default function KlinesChart({ data, setData }) {
     return () => {
       dispose("chart");
     };
-  }, [data]);
+  }, [activate]);
 
   return (
     <Collapse
-      in={data !== null}
+      in={open}
       timeout="auto"
-      unmountOnExit
       sx={{
-        mb: 5,
+        mb: open ? 5 : 0,
       }}
     >
-      <Card>
+      <Card
+        sx={{
+          backgroundColor:
+            mode === "dark" ? "rgb(16, 21, 27)" : "rgb(249, 250, 251)",
+        }}
+      >
         <Stack
           sx={{
             pl: "6px",
@@ -1857,17 +1875,23 @@ export default function KlinesChart({ data, setData }) {
             removeMainIndicatorRef={removeMainIndicatorRef}
             installSubIndicatorRef={installSubIndicatorRef}
             removeSubIndicatorRef={removeSubIndicatorRef}
-            data={data}
+            activate={activate}
           />
           <OptionsMenu
             changeCandleTypeRef={changeCandleTypeRef}
             showGridRef={showGridRef}
-            setData={setData}
+            setActivate={setActivate}
+            dataRef={dataRef}
           />
         </Stack>
         <Box sx={{ display: "flex" }}>
           <Stack
-            sx={{ gap: "4px", pt: "4px", pb: "4px", borderRadius: "16px" }}
+            sx={{
+              gap: "4px",
+              pt: "4px",
+              pb: "4px",
+              borderRadius: "16px",
+            }}
           >
             <Lines addOverlay={addOverlayRef} />
             <Divider />
@@ -1879,7 +1903,13 @@ export default function KlinesChart({ data, setData }) {
             <Divider />
             <Lineup addOverlay={addOverlayRef} />
           </Stack>
-          <Box id="chart" sx={{ height: "75vh", width: "100%" }} />
+          <Box
+            id="chart"
+            sx={{
+              height: "75vh",
+              width: "100%",
+            }}
+          />
         </Box>
       </Card>
     </Collapse>

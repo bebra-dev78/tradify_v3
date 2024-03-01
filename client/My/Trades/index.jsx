@@ -1,19 +1,25 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 
 import DataTableCardWrapper from "#/client/My/Trades/data-table-card-wrapper";
 import KlinesChart from "#/client/My/Trades/klines-chart";
 import DataTable from "#/client/My/Trades/data-table";
 
 export default function Index() {
-  const [data, setData] = useState(null);
+  const [activate, setActivate] = useState({ status: false });
+
+  const dataRef = useRef(null);
 
   return (
     <>
-      <KlinesChart data={data} setData={setData} />
+      <KlinesChart
+        dataRef={dataRef}
+        activate={activate}
+        setActivate={setActivate}
+      />
       <DataTableCardWrapper>
-        <DataTable setData={setData} />
+        <DataTable dataRef={dataRef} setActivate={setActivate} />
       </DataTableCardWrapper>
     </>
   );

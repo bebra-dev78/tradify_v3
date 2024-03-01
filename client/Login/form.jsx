@@ -7,11 +7,10 @@ import TextField from "@mui/material/TextField";
 import Alert from "@mui/material/Alert";
 import Stack from "@mui/material/Stack";
 
-import { signIn } from "next-auth/react";
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
 import NProgress from "nprogress";
-import axios from "axios";
 
 import { LinkToRestore } from "#/client/Login/links";
 import ErrorIcon from "#/client/Shared/error-icon";
@@ -21,12 +20,16 @@ export default function Form() {
   const router = useRouter();
 
   useEffect(() => {
-    axios.get("/api/bebra").then(({ data }) => {
-      if (data) {
-        NProgress.start();
-        router.push("/my/overview");
-      }
-    });
+    fetch("/api/bebra")
+      .then((r) => {
+        r.json();
+      })
+      .then((data) => {
+        if (data) {
+          NProgress.start();
+          router.push("/my/overview");
+        }
+      });
   }, []);
 
   const [passwordError, setPasswordError] = useState("");

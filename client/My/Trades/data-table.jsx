@@ -828,7 +828,7 @@ const DealActions = memo(function DealActions({ apiRef, hidden }) {
   );
 });
 
-export default function DataTable({ setData }) {
+export default function DataTable({ dataRef, setActivate }) {
   const { mutate } = useSWRConfig();
   const apiRef = useGridApiRef();
   const { keys } = useKeys();
@@ -858,13 +858,14 @@ export default function DataTable({ setData }) {
           <MenuItem
             noWrap
             onClick={() => {
-              setData({
+              setActivate({ status: true });
+              dataRef.current = {
                 exchange: row.exchange,
                 procent: row.procent,
                 start: row.entryTime,
                 end: row.exitTime,
                 symbol: value,
-              });
+              };
               window.scrollTo(0, 0);
               rowId.current = row.id;
             }}
@@ -1214,14 +1215,14 @@ export default function DataTable({ setData }) {
 
       var requests = [];
 
-      const now = Date.now();
-
       const startTime =
         Number(
           data.sort(
             (a, b) => parseInt(b.entry_time) - parseInt(a.entry_time)
           )[0].exit_time
         ) + 1000;
+
+      const now = Date.now();
 
       if (key1 !== undefined && data.some((trade) => trade.exchange === 1)) {
         requests.push(
