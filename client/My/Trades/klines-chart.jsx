@@ -27,7 +27,6 @@ import Menu from "@mui/material/Menu";
 import Box from "@mui/material/Box";
 
 import { useState, useEffect, useRef, memo } from "react";
-import crypto from "crypto";
 import axios from "axios";
 
 import Annotations from "#/client/My/Trades/tools/annotations";
@@ -36,7 +35,6 @@ import Figures from "#/client/My/Trades/tools/figures";
 import Lineup from "#/client/My/Trades/tools/lineup";
 import Lines from "#/client/My/Trades/tools/lines";
 import Cuts from "#/client/My/Trades/tools/cuts";
-import { useKeys } from "#/app/my/layout";
 import Iconify from "#/utils/iconify";
 import {
   init,
@@ -474,7 +472,6 @@ function roundTimeToInterval(dealTime, interval) {
 }
 
 const LineFigure = getFigureClass("line");
-const TextFigure = getFigureClass("text");
 
 const OptionsMenu = memo(function OptionsMenu({
   changeCandleTypeRef,
@@ -865,7 +862,6 @@ const HeaderIndicators = memo(function HeaderIndicators({
 
 export default function KlinesChart({ dataRef, activate, setActivate }) {
   const isSmallScreen = useMediaQuery("(max-width:900px)");
-  const { keys } = useKeys();
   const { mode } = useMode();
 
   const installMainIndicatorRef = useRef(null);
@@ -882,16 +878,14 @@ export default function KlinesChart({ dataRef, activate, setActivate }) {
 
   var exchange = dataRef.current?.exchange;
   var procent = dataRef.current?.procent;
+  var aggDeals = dataRef.current?.deals;
   var symbol = dataRef.current?.symbol;
   var start = dataRef.current?.start;
-  var end = dataRef.current?.end;
 
-  var t = Math.floor(start / 10000) * 10000;
+  const t = Math.floor(start / 10000) * 10000;
 
   let lastNewKlineTimestamp = null;
   let lastOldKlineTimestamp = null;
-  let updatedAggDealsRef = {};
-  let aggDealsRef = [];
 
   registerIndicator({
     name: "Buy/Sell",
@@ -900,14 +894,20 @@ export default function KlinesChart({ dataRef, activate, setActivate }) {
     draw: ({ ctx, visibleRange, indicator, xAxis, yAxis }) => {
       var result = indicator.result;
 
+      var bebra = aggDeals.map((deal) => ({
+        time: roundTimeToInterval(deal.time, intervalRef.current),
+        side: deal.side,
+        price: deal.price,
+      }));
+
       for (let i = visibleRange.from; i < visibleRange.to; i++) {
-        var deals = aggDealsRef.filter((deal) => deal.time === result[i]);
+        var deals = bebra.filter((deal) => deal.time === result[i]);
 
         deals.forEach((deal) => {
           var x = xAxis.convertToPixel(i);
           var y = yAxis.convertToPixel(deal.price);
 
-          if (deal === aggDealsRef[0]) {
+          if (deal === bebra[0]) {
             new LineFigure({
               attrs: {
                 coordinates: [
@@ -923,7 +923,7 @@ export default function KlinesChart({ dataRef, activate, setActivate }) {
             }).draw(ctx);
           }
 
-          if (deal === aggDealsRef[aggDealsRef.length - 1]) {
+          if (deal === bebra[bebra.length - 1]) {
             new LineFigure({
               attrs: {
                 coordinates: [
@@ -935,28 +935,6 @@ export default function KlinesChart({ dataRef, activate, setActivate }) {
                 style: "dashed",
                 color: deal.side === "BUY" ? "#00B8D9" : "#FFAB00",
                 dashedValue: [3],
-              },
-            }).draw(ctx);
-
-            var yOpen = yAxis.convertToPixel(deals[0].price);
-
-            var yClose = yAxis.convertToPixel(deals[deals.length - 1].price);
-
-            new TextFigure({
-              attrs: {
-                x: x + 300,
-                y:
-                  Math.max(yOpen, yClose) - Math.min(yOpen, yClose) < 20
-                    ? Math.max(yOpen, yClose) - 10
-                    : (yOpen + yClose) / 2,
-                text: procent + "%",
-                align: ctx.textAlign,
-                baseline: ctx.textBaseline,
-              },
-              styles: {
-                style: "stroke",
-                color: deal.side === "BUY" ? "#00B8D9" : "#FFAB00",
-                family: "inherit",
               },
             }).draw(ctx);
           }
@@ -971,10 +949,6 @@ export default function KlinesChart({ dataRef, activate, setActivate }) {
           ctx.lineTo(x, y);
           ctx.closePath();
           ctx.fill();
-
-          // ctx.moveTo(x + direction * 10, y + direction * 10);
-          // ctx.lineTo(x, y + direction * 10);
-          // ctx.lineTo(x - direction * 10, y + direction * 10);
         });
       }
       return false;
@@ -1012,76 +986,10 @@ export default function KlinesChart({ dataRef, activate, setActivate }) {
               ),
             ]).then((r) => {
               current = [].concat(...r.map((r) => r.data));
-
-              finishNewKlineTimestamp = Date.now();
-              finishOldKlineTimestamp = t - 2388900000;
               lastNewKlineTimestamp = t + 5400000;
               lastOldKlineTimestamp = t - 6600000;
-
-              const key1 = keys.find((key) => key.exchange === 1);
-
-              axios
-                .get("https://fapi.binance.com/fapi/v1/time")
-                .then(({ data }) => {
-                  axios
-                    .get(`https://fapi.binance.com/fapi/v1/userTrades`, {
-                      headers: {
-                        "X-MBX-APIKEY": key1.api_key,
-                      },
-                      params: {
-                        timestamp: data.serverTime,
-                        recvWindow: 60000,
-                        startTime: start,
-                        endTime: end,
-                        symbol,
-                        signature: crypto
-                          .createHmac("sha256", key1.secret_key)
-                          .update(
-                            `timestamp=${data.serverTime}&recvWindow=60000&startTime=${start}&endTime=${end}&symbol=${symbol}`
-                          )
-                          .digest("hex"),
-                      },
-                    })
-                    .then(({ data }) => {
-                      data.forEach((deal) => {
-                        const key = `${deal.side}_${deal.time}`;
-
-                        const updatedAggDeals = {
-                          ...updatedAggDealsRef,
-                        };
-
-                        if (updatedAggDeals[key]) {
-                          updatedAggDeals[key].totalPrice +=
-                            parseFloat(deal.price) * parseFloat(deal.qty);
-                          updatedAggDeals[key].totalQty += parseFloat(deal.qty);
-                          updatedAggDeals[key].avgPrice =
-                            updatedAggDeals[key].totalPrice /
-                            updatedAggDeals[key].totalQty;
-                        } else {
-                          updatedAggDeals[key] = {
-                            symbol: deal.symbol,
-                            side: deal.side,
-                            time: deal.time,
-                            realizedPnl: deal.realizedPnl,
-                            totalPrice:
-                              parseFloat(deal.price) * parseFloat(deal.qty),
-                            totalQty: parseFloat(deal.qty),
-                            avgPrice: parseFloat(deal.price),
-                          };
-                        }
-                        updatedAggDealsRef = updatedAggDeals;
-                      });
-
-                      aggDealsRef = Object.values(updatedAggDealsRef).map(
-                        (deal) => ({
-                          time: roundTimeToInterval(deal.time, interval),
-                          side: deal.side,
-                          price: deal.avgPrice,
-                          realizedPnl: deal.realizedPnl,
-                        })
-                      );
-                    });
-                });
+              finishNewKlineTimestamp = Date.now();
+              finishOldKlineTimestamp = t - 2388900000;
             });
             break;
 
@@ -1107,87 +1015,10 @@ export default function KlinesChart({ dataRef, activate, setActivate }) {
                 .then((res) => res.data.result.list.reverse()),
             ]).then((r) => {
               current = r.flat();
-
               lastNewKlineTimestamp = t + 5400000;
               lastOldKlineTimestamp = t - 6600000;
               finishNewKlineTimestamp = Date.now();
               finishOldKlineTimestamp = t - 2388900000;
-
-              const key2 = keys.find((key) => key.exchange === 2);
-
-              var bybit = [];
-
-              axios
-                .get("https://api.bybit.com/v5/market/time")
-                .then(async ({ data: { time } }) => {
-                  let cursor = "";
-
-                  do {
-                    await axios
-                      .get(
-                        `https://api.bybit.com/v5/execution/list?category=linear&symbol=${symbol}&limit=100&startTime=${start}&endTime=${end}&cursor=${cursor}`,
-                        {
-                          headers: {
-                            "X-BAPI-SIGN": crypto
-                              .createHmac("sha256", key2.secret_key)
-                              .update(
-                                time +
-                                  key2.api_key +
-                                  60000 +
-                                  `category=linear&symbol=${symbol}&limit=100&startTime=${start}&endTime=${end}&cursor=${cursor}`
-                              )
-                              .digest("hex"),
-                            "X-BAPI-API-KEY": key2.api_key,
-                            "X-BAPI-TIMESTAMP": time,
-                            "X-BAPI-RECV-WINDOW": 60000,
-                          },
-                        }
-                      )
-                      .then(({ data }) => {
-                        cursor = data.result.nextPageCursor;
-                        bybit.push(data.result.list);
-                      });
-                  } while (cursor !== "");
-
-                  bybit.flat().forEach((deal) => {
-                    const key = `${deal.side === "Buy" ? "BUY" : "SELL"}_${
-                      deal.execTime
-                    }`;
-
-                    const updatedAggDeals = {
-                      ...updatedAggDealsRef,
-                    };
-
-                    if (updatedAggDeals[key]) {
-                      updatedAggDeals[key].totalPrice +=
-                        parseFloat(deal.execPrice) * parseFloat(deal.execQty);
-                      updatedAggDeals[key].totalQty += parseFloat(deal.execQty);
-                      updatedAggDeals[key].avgPrice =
-                        updatedAggDeals[key].totalPrice /
-                        updatedAggDeals[key].totalQty;
-                    } else {
-                      updatedAggDeals[key] = {
-                        side: deal.side === "Buy" ? "BUY" : "SELL",
-                        time: parseInt(deal.execTime),
-                        realizedPnl: parseFloat(deal.closedSize),
-                        totalPrice:
-                          parseFloat(deal.execPrice) * parseFloat(deal.execQty),
-                        totalQty: parseFloat(deal.execQty),
-                        avgPrice: parseFloat(deal.execPrice),
-                      };
-                    }
-                    updatedAggDealsRef = updatedAggDeals;
-                  });
-
-                  aggDealsRef = Object.values(updatedAggDealsRef).map(
-                    (deal) => ({
-                      time: roundTimeToInterval(deal.time, interval),
-                      side: deal.side,
-                      price: deal.avgPrice,
-                      realizedPnl: deal.realizedPnl,
-                    })
-                  );
-                });
             });
             break;
 
@@ -1693,14 +1524,6 @@ export default function KlinesChart({ dataRef, activate, setActivate }) {
                           t + mainDataEndTimestaps[interval];
                         lastOldKlineTimestamp =
                           t - subDataStartTimestaps[interval];
-                        aggDealsRef = Object.values(updatedAggDealsRef).map(
-                          (deal) => ({
-                            time: roundTimeToInterval(deal.time, interval),
-                            side: deal.side,
-                            price: deal.avgPrice,
-                            realizedPnl: deal.realizedPnl,
-                          })
-                        );
                       });
                       break;
 
@@ -1734,14 +1557,6 @@ export default function KlinesChart({ dataRef, activate, setActivate }) {
                           t + mainDataEndTimestaps[interval];
                         lastOldKlineTimestamp =
                           t - subDataStartTimestaps[interval];
-                        aggDealsRef = Object.values(updatedAggDealsRef).map(
-                          (deal) => ({
-                            time: roundTimeToInterval(deal.time, interval),
-                            side: deal.side,
-                            price: deal.avgPrice,
-                            realizedPnl: deal.realizedPnl,
-                          })
-                        );
                       });
                       break;
 
@@ -1798,14 +1613,6 @@ export default function KlinesChart({ dataRef, activate, setActivate }) {
                             t + mainDataEndTimestaps[interval];
                           lastOldKlineTimestamp =
                             t - subDataStartTimestaps[interval];
-                          aggDealsRef = Object.values(updatedAggDealsRef).map(
-                            (deal) => ({
-                              time: roundTimeToInterval(deal.time, interval),
-                              side: deal.side,
-                              price: deal.avgPrice,
-                              realizedPnl: deal.realizedPnl,
-                            })
-                          );
                         });
                         break;
 
@@ -1839,14 +1646,6 @@ export default function KlinesChart({ dataRef, activate, setActivate }) {
                             t + mainDataEndTimestaps[interval];
                           lastOldKlineTimestamp =
                             t - subDataStartTimestaps[interval];
-                          aggDealsRef = Object.values(updatedAggDealsRef).map(
-                            (deal) => ({
-                              time: roundTimeToInterval(deal.time, interval),
-                              side: deal.side,
-                              price: deal.avgPrice,
-                              realizedPnl: deal.realizedPnl,
-                            })
-                          );
                         });
                         break;
 

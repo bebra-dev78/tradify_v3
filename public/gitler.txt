@@ -1,3 +1,92 @@
 LJqtt0gBCd3hyWSAVBacqRnSDRpb6B5axBHBCAVdI11tZJOAbxn6v07DdrKiZPeq
 
 dw4DxIntpKiZIeJLoomJtlJ6LCkGn49ZO3eZViMWPcnMgjgMIDQMeVEN8g9Q2EZO
+
+
+  registerIndicator({
+    name: "Buy/Sell",
+    calc: (kLineDataList) =>
+      kLineDataList.map((kLineData) => kLineData.timestamp),
+    draw: ({ ctx, visibleRange, indicator, xAxis, yAxis }) => {
+      var result = indicator.result;
+
+      for (let i = visibleRange.from; i < visibleRange.to; i++) {
+        var deals = aggDealsRef.filter((deal) => deal.time === result[i]);
+
+        deals.forEach((deal) => {
+          var x = xAxis.convertToPixel(i);
+          var y = yAxis.convertToPixel(deal.price);
+
+          if (deal === aggDealsRef[0]) {
+            new LineFigure({
+              attrs: {
+                coordinates: [
+                  { x, y },
+                  { x: x + 10000, y },
+                ],
+              },
+              styles: {
+                style: "dashed",
+                color: deal.side === "BUY" ? "#00B8D9" : "#FFAB00",
+                dashedValue: [3],
+              },
+            }).draw(ctx);
+          }
+
+          if (deal === aggDealsRef[aggDealsRef.length - 1]) {
+            new LineFigure({
+              attrs: {
+                coordinates: [
+                  { x, y },
+                  { x: x + 10000, y },
+                ],
+              },
+              styles: {
+                style: "dashed",
+                color: deal.side === "BUY" ? "#00B8D9" : "#FFAB00",
+                dashedValue: [3],
+              },
+            }).draw(ctx);
+
+            var yOpen = yAxis.convertToPixel(deals[0].price);
+
+            var yClose = yAxis.convertToPixel(deals[deals.length - 1].price);
+
+            new TextFigure({
+              attrs: {
+                x: x + 300,
+                y:
+                  Math.max(yOpen, yClose) - Math.min(yOpen, yClose) < 20
+                    ? Math.max(yOpen, yClose) - 10
+                    : (yOpen + yClose) / 2,
+                text: procent + "%",
+                align: ctx.textAlign,
+                baseline: ctx.textBaseline,
+              },
+              styles: {
+                style: "stroke",
+                color: deal.side === "BUY" ? "#00B8D9" : "#FFAB00",
+                family: "inherit",
+              },
+            }).draw(ctx);
+          }
+
+          var direction = deal.side === "BUY" ? 1 : -1;
+
+          ctx.fillStyle = deal.side === "BUY" ? "#00B8D9" : "#FFAB00";
+          ctx.beginPath();
+          ctx.moveTo(x - 10, y + direction * 10);
+          ctx.lineTo(x, y - direction * 10);
+          ctx.lineTo(x + 10, y + direction * 10);
+          ctx.lineTo(x, y);
+          ctx.closePath();
+          ctx.fill();
+
+          // ctx.moveTo(x + direction * 10, y + direction * 10);
+          // ctx.lineTo(x, y + direction * 10);
+          // ctx.lineTo(x - direction * 10, y + direction * 10);
+        });
+      }
+      return false;
+    },
+  });

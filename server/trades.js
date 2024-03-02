@@ -85,12 +85,26 @@ export async function createBynanceTrades(
 
     await prisma.trades.createMany({
       data: trades.map((trade) => {
+        var deals = [];
+        var ut = new Set();
         var b = trade.filter((t) => t.side === "BUY");
         var s = trade.filter((t) => t.side === "SELL");
         var bt = b.reduce((a, c) => a + parseFloat(c.qty), 0);
         var st = s.reduce((a, c) => a + parseFloat(c.qty), 0);
         var bv = b.reduce((a, c) => a + parseFloat(c.quoteQty), 0);
         var sv = s.reduce((a, c) => a + parseFloat(c.quoteQty), 0);
+
+        trade.forEach((t) => {
+          if (!ut.has(t.time)) {
+            ut.add(t.time);
+            deals.push({
+              time: t.time,
+              side: t.side,
+              price: t.price,
+            });
+          }
+        });
+
         return {
           uid,
           kid,
@@ -131,6 +145,7 @@ export async function createBynanceTrades(
             st
           ).toFixed(4),
           duration: String(trade[trade.length - 1].time - trade[0].time),
+          deals,
         };
       }),
     });
@@ -223,12 +238,26 @@ export async function createBybitTrades(uid, kid, apikey, secretkey, now) {
 
     await prisma.trades.createMany({
       data: trades.map((trade) => {
-        const b = trade.filter((t) => t.side === "Buy");
-        const s = trade.filter((t) => t.side === "Sell");
-        const bt = b.reduce((a, c) => a + parseFloat(c.execQty), 0);
-        const st = s.reduce((a, c) => a + parseFloat(c.execQty), 0);
-        const bv = b.reduce((a, c) => a + parseFloat(c.execValue), 0);
-        const sv = s.reduce((a, c) => a + parseFloat(c.execValue), 0);
+        var deals = [];
+        var ut = new Set();
+        var b = trade.filter((t) => t.side === "Buy");
+        var s = trade.filter((t) => t.side === "Sell");
+        var bt = b.reduce((a, c) => a + parseFloat(c.execQty), 0);
+        var st = s.reduce((a, c) => a + parseFloat(c.execQty), 0);
+        var bv = b.reduce((a, c) => a + parseFloat(c.execValue), 0);
+        var sv = s.reduce((a, c) => a + parseFloat(c.execValue), 0);
+
+        trade.forEach((t) => {
+          if (!ut.has(t.execTime)) {
+            ut.add(t.execTime);
+            deals.push({
+              time: t.execTime,
+              side: t.side.toUpperCase(),
+              price: t.execPrice,
+            });
+          }
+        });
+
         return {
           uid,
           kid,
@@ -236,7 +265,7 @@ export async function createBybitTrades(uid, kid, apikey, secretkey, now) {
           symbol: trade[0].symbol,
           entry_time: String(trade[0].execTime),
           exit_time: String(trade[trade.length - 1].execTime),
-          side: trade[0].side === "Buy" ? "BUY" : "SELL",
+          side: trade[0].side.toUpperCase(),
           procent: (((sv / st - bv / bt) / (bv / bt)) * 100).toFixed(2),
           income: (parseFloat(sv) - parseFloat(bv)).toFixed(3),
           turnover: ((bt + st) / 2).toFixed(1),
@@ -270,6 +299,7 @@ export async function createBybitTrades(uid, kid, apikey, secretkey, now) {
           duration: String(
             trade[trade.length - 1].execTime - trade[0].execTime
           ),
+          deals,
         };
       }),
     });

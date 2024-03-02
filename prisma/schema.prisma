@@ -83,6 +83,7 @@ model Trades {
   avg_entry_price String  @db.TinyText
   avg_exit_price  String  @db.TinyText
   duration        String  @db.TinyText
+  deals           Json
 
   UO Users @relation("uid", fields: [uid], references: [id])
   KO Keys  @relation("kid", fields: [kid], references: [id])

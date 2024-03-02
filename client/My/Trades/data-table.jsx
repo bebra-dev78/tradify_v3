@@ -364,7 +364,6 @@ const GridToolbarAddTag = memo(function GridToolbarAddTag() {
   const [anchorEl, setAnchorEl] = useState(null);
 
   const popperRef = useRef(null);
-  const tagRef = useRef(null);
 
   const open = Boolean(anchorEl);
 
@@ -418,56 +417,84 @@ const GridToolbarAddTag = memo(function GridToolbarAddTag() {
                     "rgba(0, 0, 0, 0.24) 0px 0px 2px 0px, rgba(0, 0, 0, 0.24) -20px 20px 40px -4px",
                 }}
               >
-                <TextField
-                  label="Причина"
-                  variant="outlined"
-                  color="secondary"
-                  size="medium"
-                  fullWidth
-                  autoFocus
-                  inputRef={tagRef}
-                  sx={{ mb: 2 }}
-                />
-                <Button
-                  variant="contained"
-                  color="inherit"
-                  size="medium"
-                  fullWidth
-                  onClick={() => {
-                    if (!/[a-zA-Zа-яА-Я]/.test(tagRef.current.value)) {
-                      return;
-                    }
-                    setAnchorEl(null);
-                    localStorage.setItem(
-                      "tags",
-                      JSON.stringify([
-                        ...(JSON.parse(localStorage.getItem("tags")) ?? []),
-                        tagRef.current.value,
-                      ])
-                    );
-                  }}
-                  sx={{ mb: 2 }}
-                >
-                  Добавить
-                </Button>
-                <Button
-                  variant="contained"
-                  color="error"
-                  size="medium"
-                  fullWidth
-                  onClick={() => {
-                    setAnchorEl(null);
-                    localStorage.setItem("tags", JSON.stringify([]));
-                  }}
-                >
-                  Очистить всё
-                </Button>
+                <GridToolbarAddTagPaper setAnchorEl={setAnchorEl} />
               </Paper>
             </Grow>
           )}
         </Popper>
       </div>
     </ClickAwayListener>
+  );
+});
+
+const GridToolbarAddTagPaper = memo(function GridToolbarAddTagPaper({
+  setAnchorEl,
+}) {
+  const tagRef = useRef(null);
+
+  useEffect(() => {
+    function handleKeyPress(event) {
+      if (event.key === "Enter" || event.key === " ") {
+        handleSubmit();
+      }
+    }
+
+    document.addEventListener("keydown", handleKeyPress);
+    return () => {
+      document.removeEventListener("keydown", handleKeyPress);
+    };
+  }, []);
+
+  function handleSubmit() {
+    if (!/[a-zA-Zа-яА-Я]/.test(tagRef.current.value)) {
+      return;
+    }
+    setAnchorEl(null);
+    localStorage.setItem(
+      "tags",
+      JSON.stringify([
+        ...(JSON.parse(localStorage.getItem("tags")) ?? []),
+        tagRef.current.value,
+      ])
+    );
+  }
+
+  return (
+    <>
+      <TextField
+        label="Причина"
+        variant="outlined"
+        color="secondary"
+        size="medium"
+        fullWidth
+        autoFocus
+        inputRef={tagRef}
+        sx={{ mb: 2 }}
+      />
+      <Button
+        variant="contained"
+        color="inherit"
+        size="medium"
+        fullWidth
+        autoSave=""
+        onClick={handleSubmit}
+        sx={{ mb: 2 }}
+      >
+        Добавить
+      </Button>
+      <Button
+        variant="contained"
+        color="error"
+        size="medium"
+        fullWidth
+        onClick={() => {
+          setAnchorEl(null);
+          localStorage.setItem("tags", JSON.stringify([]));
+        }}
+      >
+        Очистить всё
+      </Button>
+    </>
   );
 });
 
@@ -734,6 +761,7 @@ const DealActions = memo(function DealActions({ apiRef, hidden }) {
                   (sum, trade) => sum + parseFloat(trade.duration || 0),
                   0
                 ),
+                deals: trades.flatMap((trade) => trade.deals ?? []),
               },
             ]);
             deleteTrades(ids);
@@ -783,6 +811,7 @@ const DealActions = memo(function DealActions({ apiRef, hidden }) {
                   0
                 )
               ),
+              deals: trades.flatMap((trade) => trade.deals ?? []),
             });
           }}
           sx={{
@@ -863,7 +892,7 @@ export default function DataTable({ dataRef, setActivate }) {
                 exchange: row.exchange,
                 procent: row.procent,
                 start: row.entryTime,
-                end: row.exitTime,
+                deals: row.deals,
                 symbol: value,
               };
               window.scrollTo(0, 0);
@@ -1195,6 +1224,7 @@ export default function DataTable({ dataRef, setActivate }) {
         averageEntryPrice: trade.avg_entry_price,
         averageExitPrice: trade.avg_exit_price,
         duration: parseInt(trade.duration),
+        deals: trade.deals,
         apikey: keys.find((key) => key.id === trade.kid).title,
       }));
     } else {
@@ -1220,7 +1250,7 @@ export default function DataTable({ dataRef, setActivate }) {
           data.sort(
             (a, b) => parseInt(b.entry_time) - parseInt(a.entry_time)
           )[0].exit_time
-        ) + 1000;
+        ) + 500;
 
       const now = Date.now();
 
@@ -1323,6 +1353,8 @@ export default function DataTable({ dataRef, setActivate }) {
                       if (trades.length > 0) {
                         createDefaultTrades(
                           trades.map((trade) => {
+                            var deals = [];
+                            var ut = new Set();
                             var b = trade.filter((t) => t.side === "BUY");
                             var s = trade.filter((t) => t.side === "SELL");
                             var bt = b.reduce(
@@ -1341,6 +1373,18 @@ export default function DataTable({ dataRef, setActivate }) {
                               (a, c) => a + parseFloat(c.quoteQty),
                               0
                             );
+
+                            trade.forEach((t) => {
+                              if (!ut.has(t.time)) {
+                                ut.add(t.time);
+                                deals.push({
+                                  time: t.time,
+                                  side: t.side,
+                                  price: t.price,
+                                });
+                              }
+                            });
+
                             return {
                               uid: user.id,
                               kid: key1.id,
@@ -1399,6 +1443,7 @@ export default function DataTable({ dataRef, setActivate }) {
                               duration: String(
                                 trade[trade.length - 1].time - trade[0].time
                               ),
+                              deals,
                             };
                           })
                         ).then((b) => {
@@ -1425,6 +1470,7 @@ export default function DataTable({ dataRef, setActivate }) {
                                 averageEntryPrice: trade.avg_entry_price,
                                 averageExitPrice: trade.avg_exit_price,
                                 duration: parseInt(trade.duration),
+                                deals: trade.deals,
                                 apikey: keys.find((key) => key.id === trade.kid)
                                   .title,
                               },
@@ -1534,12 +1580,26 @@ export default function DataTable({ dataRef, setActivate }) {
           if (trades.length > 0) {
             createDefaultTrades(
               trades.map((trade) => {
-                const b = trade.filter((t) => t.side === "Buy");
-                const s = trade.filter((t) => t.side === "Sell");
-                const bt = b.reduce((a, c) => a + parseFloat(c.execQty), 0);
-                const st = s.reduce((a, c) => a + parseFloat(c.execQty), 0);
-                const bv = b.reduce((a, c) => a + parseFloat(c.execValue), 0);
-                const sv = s.reduce((a, c) => a + parseFloat(c.execValue), 0);
+                var deals = [];
+                var ut = new Set();
+                var b = trade.filter((t) => t.side === "Buy");
+                var s = trade.filter((t) => t.side === "Sell");
+                var bt = b.reduce((a, c) => a + parseFloat(c.execQty), 0);
+                var st = s.reduce((a, c) => a + parseFloat(c.execQty), 0);
+                var bv = b.reduce((a, c) => a + parseFloat(c.execValue), 0);
+                var sv = s.reduce((a, c) => a + parseFloat(c.execValue), 0);
+
+                trade.forEach((t) => {
+                  if (!ut.has(t.execTime)) {
+                    ut.add(t.execTime);
+                    deals.push({
+                      time: t.execTime,
+                      side: t.side.toUpperCase(),
+                      price: t.execPrice,
+                    });
+                  }
+                });
+
                 return {
                   uid: user.id,
                   kid: key2.id,
@@ -1547,7 +1607,7 @@ export default function DataTable({ dataRef, setActivate }) {
                   symbol: trade[0].symbol,
                   entry_time: String(trade[0].execTime),
                   exit_time: String(trade[trade.length - 1].execTime),
-                  side: trade[0].side === "Buy" ? "BUY" : "SELL",
+                  side: trade[0].side.toUpperCase(),
                   procent: (((sv / st - bv / bt) / (bv / bt)) * 100).toFixed(2),
                   income: (parseFloat(sv) - parseFloat(bv)).toFixed(3),
                   turnover: ((bt + st) / 2).toFixed(1),
@@ -1583,6 +1643,7 @@ export default function DataTable({ dataRef, setActivate }) {
                   duration: String(
                     trade[trade.length - 1].execTime - trade[0].execTime
                   ),
+                  deals,
                 };
               })
             ).then((b) => {
@@ -1609,6 +1670,7 @@ export default function DataTable({ dataRef, setActivate }) {
                     averageEntryPrice: trade.avg_entry_price,
                     averageExitPrice: trade.avg_exit_price,
                     duration: parseInt(trade.duration),
+                    deals: trade.deals,
                     apikey: keys.find((key) => key.id === trade.kid).title,
                   },
                 ]);
