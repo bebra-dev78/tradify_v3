@@ -446,13 +446,26 @@ export default function ThemeRegistry({ children }) {
                   backgroundColor: "rgba(22, 28, 36, 0.8)",
                 },
               },
+              // PaperProps: {
+              //   sx: {
+              //     borderRadius: "16px",
+              //     boxShadow: dark
+              //       ? "rgba(0, 0, 0, 0.24) -40px 40px 80px -8px"
+              //       : "rgba(145, 158, 171, 0.24) -40px 40px 80px -8px",
+              //     margin: "16px",
+              //   },
+              // },
               PaperProps: {
                 sx: {
+                  margin: "16px",
+                  maxWidth: "444px",
                   borderRadius: "16px",
+                  backgroundImage: "none",
+                  width: "calc(100% - 64px)",
+                  maxHeight: "calc(100% - 64px)",
                   boxShadow: dark
                     ? "rgba(0, 0, 0, 0.24) -40px 40px 80px -8px"
                     : "rgba(145, 158, 171, 0.24) -40px 40px 80px -8px",
-                  margin: "16px",
                 },
               },
             },
@@ -507,9 +520,18 @@ export default function ThemeRegistry({ children }) {
           MuiPopover: {
             defaultProps: {
               slotProps: {
-                boxShadow: dark
-                  ? "rgba(0, 0, 0, 0.24) 0px 0px 2px 0px, rgba(0, 0, 0, 0.24) -20px 20px 40px -4px"
-                  : "rgba(145, 158, 171, 0.24) 0px 0px 2px 0px, rgba(145, 158, 171, 0.24) -20px 20px 40px -4px",
+                paper: {
+                  sx: {
+                    mt: "10px",
+                    maxWidth: "600px",
+                    borderRadius: "10px",
+                    backgroundImage: "none",
+                    maxHeight: "calc(100% - 64px)",
+                    boxShadow: dark
+                      ? "rgba(0, 0, 0, 0.24) -40px 40px 80px -8px"
+                      : "rgba(145, 158, 171, 0.24) -40px 40px 80px -8px",
+                  },
+                },
               },
             },
           },

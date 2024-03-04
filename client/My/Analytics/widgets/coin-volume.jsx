@@ -7,43 +7,31 @@ import Skeleton from "@mui/material/Skeleton";
 import Card from "@mui/material/Card";
 import Box from "@mui/material/Box";
 
-import { useMemo, memo } from "react";
 import Chart from "react-apexcharts";
+import { useMemo } from "react";
 
+import useFormat from "#/utils/format-thousands";
 import Iconify from "#/utils/iconify";
 
-export default memo(function CoinVolume({
-  data,
-  isLoading,
-  handleDeleteWidget,
-}) {
+export default function CoinVolume({ data, isLoading, handleDeleteWidget }) {
   const theme = useTheme();
 
   const counter = useMemo(() => {
     if (data) {
-      const aggregatedData = data.reduce((acc, trade) => {
-        if (acc[trade.symbol]) {
-          acc[trade.symbol] += parseFloat(trade.volume);
-        } else {
-          acc[trade.symbol] = parseFloat(trade.volume);
-        }
-        return acc;
-      }, {});
-
-      return {
-        categories: Object.keys(
-          Object.fromEntries(
-            Object.entries(aggregatedData).sort((a, b) => a[1] - b[1])
-          )
-        ),
-        series: Object.values(
-          Object.fromEntries(
-            Object.entries(aggregatedData).sort((a, b) => a[1] - b[1])
-          )
-        ),
-      };
+      return Object.fromEntries(
+        Object.entries(
+          data.reduce((acc, trade) => {
+            if (acc[trade.symbol]) {
+              acc[trade.symbol] += parseFloat(trade.volume);
+            } else {
+              acc[trade.symbol] = parseFloat(trade.volume);
+            }
+            return acc;
+          }, {})
+        ).sort((a, b) => a[1] - b[1])
+      );
     } else {
-      return { categories: {}, series: {} };
+      return {};
     }
   }, [data]);
 
@@ -82,6 +70,11 @@ export default memo(function CoinVolume({
             dropShadow: {
               enabled: false,
             },
+            animations: {
+              dynamicAnimation: {
+                enabled: false,
+              },
+            },
           },
           colors: ["#FFAC82"],
           dataLabels: {
@@ -97,7 +90,7 @@ export default memo(function CoinVolume({
             },
           },
           xaxis: {
-            categories: counter.categories,
+            categories: Object.keys(counter),
             axisBorder: {
               show: false,
             },
@@ -111,20 +104,21 @@ export default memo(function CoinVolume({
             },
           },
           yaxis: {
+            max: data.length === 0 ? 5 : undefined,
+            min: data.length === 0 ? 0 : undefined,
             labels: {
               style: {
                 colors: theme.palette.text.secondary,
               },
             },
           },
-
           tooltip: {
             marker: { show: false },
             x: {
               show: false,
             },
             y: {
-              formatter: (value) => `$${value.toFixed(0)}`,
+              formatter: (value) => `$${useFormat(value.toFixed(0))}`,
               title: {
                 formatter: () => "",
               },
@@ -137,7 +131,7 @@ export default memo(function CoinVolume({
         }}
         series={[
           {
-            data: counter.series,
+            data: Object.values(counter),
           },
         ]}
         height={"85%"}
@@ -157,4 +151,4 @@ export default memo(function CoinVolume({
       />
     </Card>
   );
-});
+}

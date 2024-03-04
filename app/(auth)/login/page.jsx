@@ -80,7 +80,7 @@ export default function Login() {
             position: "relative",
           }}
         >
-          <Image src={auth_illustration} priority={true} alt="Вход в аккаунт" />
+          <Image src={auth_illustration} priority={true} />
         </Box>
         <AuthOverlay />
       </Box>

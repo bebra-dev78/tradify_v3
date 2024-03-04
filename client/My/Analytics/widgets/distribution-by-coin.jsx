@@ -9,13 +9,14 @@ import Stack from "@mui/material/Stack";
 import Card from "@mui/material/Card";
 import Box from "@mui/material/Box";
 
-import { useMemo, memo } from "react";
 import Chart from "react-apexcharts";
+import { useMemo } from "react";
 
 import Iconify from "#/utils/iconify";
 
-export default memo(function DistributionByCoin({
+export default function DistributionByCoin({
   data,
+  colors,
   isLoading,
   handleDeleteWidget,
 }) {
@@ -59,6 +60,10 @@ export default memo(function DistributionByCoin({
           chart: {
             type: "pie",
             animations: {
+              enabled: false,
+              animateGradually: {
+                enabled: false,
+              },
               dynamicAnimation: {
                 enabled: false,
               },
@@ -66,24 +71,10 @@ export default memo(function DistributionByCoin({
           },
           labels: Object.keys(counter),
           stroke: {
-            show: true,
             colors: ["rgb(33, 43, 54)"],
             width: 3,
           },
-          colors: [
-            "rgb(0, 184, 217)",
-            "rgb(255, 86, 48)",
-            "rgb(255, 171, 0)",
-            "rgb(142, 51, 255)",
-            "rgb(34, 197, 94)",
-            "#009E69",
-            "#FF5630",
-            "#FFAB00",
-            "#006C9C",
-            "#00bfa5",
-            "#00b8d4",
-            "#637381",
-          ],
+          colors,
           legend: {
             labels: {
               colors: "text.primary",
@@ -116,7 +107,7 @@ export default memo(function DistributionByCoin({
           },
         }}
         series={Object.values(counter)}
-        height={"65%"}
+        height="65%"
         type="pie"
       />
       <Box sx={{ flexGrow: 1 }} />
@@ -173,4 +164,4 @@ export default memo(function DistributionByCoin({
       />
     </Card>
   );
-});
+}

@@ -122,7 +122,7 @@ export default function StatisticsItem() {
   ) : (
     <Card>
       <CardHeader
-        title="Статистика за неделю"
+        title="Статистика за 7 дней"
         action={
           <IconButton onClick={() => setOpenInfo((prev) => !prev)}>
             <Iconify icon="solar:info-circle-linear" color="text.disabled" />
@@ -230,7 +230,7 @@ export default function StatisticsItem() {
                   fontFamily: "inherit",
                 },
                 offsetX: -10,
-                formatter: (val) => val?.toFixed(0),
+                formatter: (val) => `${val?.toFixed(0)}$`,
               },
             },
             tooltip: {

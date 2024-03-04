@@ -9,12 +9,9 @@ import Box from "@mui/material/Box";
 import { useState } from "react";
 
 import { readNotifications } from "#/server/notifications";
-import { useMode } from "#/client/Global/theme-registry";
 import Iconify from "#/utils/iconify";
 
 export default function Notifications({ id, unread }) {
-  const { mode } = useMode();
-
   const [anchorEl, setAnchorEl] = useState(null);
   const [check, setCheck] = useState(false);
 
@@ -50,12 +47,7 @@ export default function Notifications({ id, unread }) {
         slotProps={{
           paper: {
             sx: {
-              mt: 1,
               width: "360px",
-              boxShadow:
-                mode === "dark"
-                  ? "rgba(0, 0, 0, 0.24) 0px 0px 2px 0px, rgba(0, 0, 0, 0.24) -20px 20px 40px -4px"
-                  : "rgba(145, 158, 171, 0.24) 0px 0px 2px 0px, rgba(145, 158, 171, 0.24) -20px 20px 40px -4px",
               "@media (max-width: 600px)": {
                 maxWidth: "300px",
               },

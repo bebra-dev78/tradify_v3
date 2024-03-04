@@ -434,7 +434,7 @@ const GridToolbarAddTagPaper = memo(function GridToolbarAddTagPaper({
 
   useEffect(() => {
     function handleKeyPress(event) {
-      if (event.key === "Enter" || event.key === " ") {
+      if (event.key === "Enter") {
         handleSubmit();
       }
     }

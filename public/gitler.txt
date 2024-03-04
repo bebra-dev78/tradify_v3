@@ -90,3 +90,571 @@ dw4DxIntpKiZIeJLoomJtlJ6LCkGn49ZO3eZViMWPcnMgjgMIDQMeVEN8g9Q2EZO
       return false;
     },
   });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  "use client";
+
+import FormControl from "@mui/material/FormControl";
+import InputLabel from "@mui/material/InputLabel";
+import CardHeader from "@mui/material/CardHeader";
+import IconButton from "@mui/material/IconButton";
+import Typography from "@mui/material/Typography";
+import Container from "@mui/material/Container";
+import { useTheme } from "@mui/material/styles";
+import MenuItem from "@mui/material/MenuItem";
+import Skeleton from "@mui/material/Skeleton";
+import Select from "@mui/material/Select";
+import Card from "@mui/material/Card";
+import Box from "@mui/material/Box";
+
+import { useMemo, useState } from "react";
+import Chart from "react-apexcharts";
+import { DateTime } from "luxon";
+import moment from "moment";
+
+import Iconify from "#/utils/iconify";
+
+export default function currentOfTrades({
+  data,
+  colors,
+  timeRange,
+  isLoading,
+  chartTypes,
+  timeRangeStatus,
+  handleDeleteWidget,
+}) {
+  const theme = useTheme();
+
+  const [chartType, setChartType] = useState(
+    chartTypes !== null ? chartTypes["counter-of-trades"] : "bar"
+  );
+
+  const [series, categories, counter] = useMemo(() => {
+    if (data) {
+      let current = {};
+      let filter = [];
+
+      switch (timeRangeStatus) {
+        case "current-day":
+          filter = data.filter((trade) =>
+            moment(parseInt(trade.entry_time)).isBetween(
+              DateTime.now().startOf("day").toMillis(),
+              DateTime.now().endOf("day").toMillis()
+            )
+          );
+
+          filter.forEach((trade) => {
+            var symbol = trade.symbol;
+            if (!current[symbol]) {
+              current[symbol] = Array(24).fill(0);
+            }
+
+            var entryHour = moment(parseInt(trade.entry_time)).hour();
+            current[symbol][entryHour] += 1;
+          });
+
+          return [
+            Object.entries(current).map(([symbol, counts]) => ({
+              name: symbol,
+              data: counts,
+            })),
+            Array(24)
+              .fill()
+              .map((_, index) =>
+                DateTime.now()
+                  .startOf("day")
+                  .plus({ hours: index })
+                  .toFormat("HH:mm")
+              ),
+            filter.length,
+          ];
+        case "current-week":
+          filter = data.filter((trade) =>
+            moment(parseInt(trade.entry_time)).isBetween(
+              DateTime.now().startOf("week").toMillis(),
+              DateTime.now().endOf("week").toMillis()
+            )
+          );
+          filter.forEach((trade) => {
+            var symbol = trade.symbol;
+            if (!current[symbol]) {
+              current[symbol] = Array(7).fill(0);
+            }
+
+            var entryDay = moment(parseInt(trade.entry_time)).day();
+            var luxonDayIndex = (entryDay + 6) % 7;
+            current[symbol][luxonDayIndex] += 1;
+          });
+
+          return [
+            Object.entries(current).map(([symbol, counts]) => ({
+              name: symbol,
+              data: counts,
+            })),
+            Array(7)
+              .fill()
+              .map((_, index) =>
+                DateTime.now()
+                  .startOf("week")
+                  .plus({ days: index })
+                  .toFormat("dd.MM")
+              ),
+            filter.length,
+          ];
+        case "current-month":
+          filter = data.filter((trade) =>
+            moment(parseInt(trade.entry_time)).isBetween(
+              DateTime.now().startOf("month").toMillis(),
+              DateTime.now().endOf("month").toMillis()
+            )
+          );
+          filter.forEach((trade) => {
+            var symbol = trade.symbol;
+            if (!current[symbol]) {
+              current[symbol] = Array(DateTime.now().daysInMonth).fill(0);
+            }
+
+            var entryDay = moment(parseInt(trade.entry_time)).date();
+            current[symbol][entryDay - 1] += 1;
+          });
+
+          return [
+            Object.entries(current).map(([symbol, counts]) => ({
+              name: symbol,
+              data: counts,
+            })),
+            Array(DateTime.now().daysInMonth)
+              .fill()
+              .map((_, index) =>
+                DateTime.now()
+                  .startOf("month")
+                  .plus({ days: index })
+                  .toFormat("dd")
+              ),
+            filter.length,
+          ];
+        case "all":
+          const startOfLast30Days = DateTime.now()
+            .minus({ days: 29 })
+            .startOf("day")
+            .toMillis();
+
+          filter = data.filter((trade) =>
+            moment(parseInt(trade.entry_time)).isBetween(
+              startOfLast30Days,
+              DateTime.now().endOf("day").toMillis()
+            )
+          );
+
+          filter.forEach((trade) => {
+            var symbol = trade.symbol;
+            if (!current[symbol]) {
+              current[symbol] = Array(30).fill(0);
+            }
+
+            var entryDay = moment(parseInt(trade.entry_time)).diff(
+              startOfLast30Days,
+              "days"
+            );
+            if (entryDay >= 0 && entryDay < 30) {
+              current[symbol][entryDay] += 1;
+            }
+          });
+
+          return [
+            Object.entries(current).map(([symbol, counts]) => ({
+              name: symbol,
+              data: counts,
+            })),
+            Array(30)
+              .fill()
+              .map((_, index) =>
+                DateTime.now()
+                  .minus({ days: 29 })
+                  .startOf("day")
+                  .plus({ days: index })
+                  .toFormat("dd.MM")
+              ),
+            filter.length,
+          ];
+        case "custom":
+          try {
+            const startOfCustomRange = DateTime.fromMillis(timeRange[0])
+              .startOf("day")
+              .toMillis();
+            const endOfCustomRange = DateTime.fromMillis(timeRange[1])
+              .endOf("day")
+              .toMillis();
+
+            if (endOfCustomRange - startOfCustomRange < 2592000000) {
+              filter = data.filter((trade) =>
+                moment(parseInt(trade.entry_time)).isBetween(
+                  startOfCustomRange,
+                  endOfCustomRange
+                )
+              );
+              filter.forEach((trade) => {
+                var symbol = trade.symbol;
+                if (!current[symbol]) {
+                  current[symbol] = Array(
+                    DateTime.fromMillis(timeRange[1]).diff(
+                      DateTime.fromMillis(timeRange[0]),
+                      "days"
+                    ).days + 1
+                  ).fill(0);
+                }
+
+                var entryDay = moment(parseInt(trade.entry_time)).diff(
+                  startOfCustomRange,
+                  "days"
+                );
+                if (entryDay >= 0 && entryDay < current[symbol].length) {
+                  current[symbol][entryDay] += 1;
+                }
+              });
+
+              return [
+                Object.entries(current).map(([symbol, counts]) => ({
+                  name: symbol,
+                  data: counts,
+                })),
+                Array(
+                  DateTime.fromMillis(timeRange[1]).diff(
+                    DateTime.fromMillis(timeRange[0]),
+                    "days"
+                  ).days + 1
+                )
+                  .fill()
+                  .map((_, index) =>
+                    DateTime.fromMillis(timeRange[0])
+                      .startOf("day")
+                      .plus({ days: index })
+                      .toFormat("dd.MM")
+                  ),
+                filter.length,
+              ];
+            } else {
+              const startOfLast30Days = DateTime.now()
+                .minus({ days: 29 })
+                .startOf("day")
+                .toMillis();
+
+              filter = data.filter((trade) =>
+                moment(parseInt(trade.entry_time)).isBetween(
+                  startOfLast30Days,
+                  DateTime.now().endOf("day").toMillis()
+                )
+              );
+
+              filter.forEach((trade) => {
+                const symbol = trade.symbol;
+                if (!current[symbol]) {
+                  current[symbol] = Array(30).fill(0);
+                }
+
+                const entryDay = moment(parseInt(trade.entry_time)).diff(
+                  startOfLast30Days,
+                  "days"
+                );
+                if (entryDay >= 0 && entryDay < 30) {
+                  current[symbol][entryDay] += 1;
+                }
+              });
+
+              return [
+                Object.entries(current).map(([symbol, counts]) => ({
+                  name: symbol,
+                  data: counts,
+                })),
+                Array(30)
+                  .fill()
+                  .map((_, index) =>
+                    DateTime.now()
+                      .minus({ days: 29 })
+                      .startOf("day")
+                      .plus({ days: index })
+                      .toFormat("dd.MM")
+                  ),
+                filter.length,
+              ];
+            }
+          } catch (e) {
+            return [{}, [], 0];
+          }
+        default:
+          return [{}, [], 0];
+      }
+    } else {
+      return [{}, [], 0];
+    }
+  }, [data, timeRange, timeRangeStatus]);
+
+  const enabled =
+    timeRangeStatus === "all" || timeRangeStatus === "custom" ? false : true;
+
+  return isLoading ? (
+    <Skeleton sx={{ height: "100%" }} />
+  ) : (
+    <Card sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
+      <CardHeader
+        title="Счетчик сделок"
+        titleTypographyProps={{
+          className: "drag-header",
+          sx: { cursor: "move" },
+        }}
+        action={
+          <>
+            <FormControl sx={{ mr: 1 }} size="small">
+              <InputLabel>Тип графика</InputLabel>
+              <Select
+                label="Тип графика"
+                value={chartType}
+                onChange={(e) => {
+                  setChartType(e.target.value);
+                  localStorage.setItem(
+                    "chartTypes",
+                    JSON.stringify({
+                      ...chartTypes,
+                      "counter-of-trades": e.target.value,
+                    })
+                  );
+                }}
+              >
+                <MenuItem value={"bar"}>Столбчатый</MenuItem>
+                <MenuItem value={"numeric"}>Числовой</MenuItem>
+              </Select>
+            </FormControl>
+            <IconButton
+              onClick={() => {
+                handleDeleteWidget(3);
+              }}
+            >
+              <Iconify
+                icon="solar:close-square-outline"
+                color="text.disabled"
+              />
+            </IconButton>
+          </>
+        }
+        sx={{ p: "24px 24px 0px" }}
+      />
+      <Box sx={{ flexGrow: 1 }} />
+      {chartType === "bar" ? (
+        <Chart
+          options={{
+            chart: {
+              type: "bar",
+              stacked: true,
+              toolbar: {
+                show: false,
+              },
+              zoom: {
+                enabled: false,
+              },
+              dropShadow: {
+                enabled: false,
+              },
+              animations: {
+                enabled,
+                animateGradually: {
+                  enabled,
+                },
+                dynamicAnimation: {
+                  enabled,
+                },
+              },
+            },
+            colors,
+            grid: {
+              borderColor: "rgba(145, 158, 171, 0.2)",
+              strokeDashArray: 3,
+            },
+            legend: {
+              position: "top",
+              horizontalAlign: "right",
+              labels: {
+                colors: theme.palette.text.primary,
+              },
+              fontFamily: "inherit",
+              fontWeight: 500,
+              fontSize: "13px",
+              itemMargin: {
+                horizontal: 14,
+                vertical: 5,
+              },
+              markers: {
+                width: 11,
+                height: 11,
+                offsetX: -2,
+              },
+            },
+            dataLabels: {
+              enabled: false,
+            },
+            plotOptions: {
+              bar: {
+                columnWidth: "13%",
+              },
+            },
+            tooltip: {
+              x: {
+                show: false,
+              },
+              style: {
+                fontSize: "12px",
+                fontFamily: "inherit",
+              },
+            },
+            yaxis: {
+              labels: {
+                style: {
+                  colors: theme.palette.text.secondary,
+                },
+              },
+            },
+            xaxis: {
+              categories,
+              axisBorder: {
+                show: false,
+              },
+              axisTicks: {
+                show: false,
+              },
+              labels: {
+                style: {
+                  colors: theme.palette.text.secondary,
+                },
+              },
+            },
+          }}
+          series={series}
+          height="85%"
+          type="bar"
+        />
+      ) : (
+        <Container
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            height: "100%",
+          }}
+        >
+          <Typography variant="h3" sx={{ m: "auto" }}>
+            Всего:
+          </Typography>
+          <Box
+            sx={{
+              m: "auto",
+              lineHeight: 0,
+              fontWeight: 700,
+              cursor: "default",
+              padding: "0px 6px",
+              fontSize: "0.75rem",
+              borderRadius: "6px",
+              alignItems: "center",
+              whiteSpace: "nowrap",
+              width: "min-content",
+              height: "min-content",
+              display: "inline-flex",
+              justifyContent: "center",
+              backgroundColor: "rgba(0, 184, 217, 0.16)",
+              transition: "all 200ms cubic-bezier(0.4, 0, 0.2, 1) 0ms",
+              color:
+                theme.palette.mode === "dark"
+                  ? "rgb(97, 243, 243)"
+                  : "rgb(0, 108, 156)",
+            }}
+          >
+            <Typography variant="h3">{counter}</Typography>
+          </Box>
+        </Container>
+      )}
+      <Box sx={{ flexGrow: 1 }} />
+      <Iconify
+        icon="tabler:border-corner-ios"
+        color="#637381"
+        width={18}
+        sx={{
+          position: "absolute",
+          rotate: "180deg",
+          bottom: 0,
+          right: 0,
+        }}
+      />
+    </Card>
+  );
+}
+
+
+
+
+
+switch (timeRangeStatus) {
+        case "current-day":
+          return data.filter((trade) =>
+            moment(parseInt(trade.entry_time)).isBetween(
+              DateTime.now().startOf("day").toMillis(),
+              DateTime.now().endOf("day").toMillis()
+            )
+          );
+
+        case "current-week":
+          return data.filter((trade) =>
+            moment(parseInt(trade.entry_time)).isBetween(
+              DateTime.now().startOf("week").toMillis(),
+              DateTime.now().endOf("week").toMillis()
+            )
+          );
+
+        case "current-month":
+          return data.filter((trade) =>
+            moment(parseInt(trade.entry_time)).isBetween(
+              DateTime.now().startOf("month").toMillis(),
+              DateTime.now().endOf("month").toMillis()
+            )
+          );
+
+        case "last-7":
+          return data;
+
+        case "last-30":
+          return data;
+
+        case "custom":
+          try {
+            return data.filter((trade) =>
+              moment(parseInt(trade.entry_time)).isBetween(
+                DateTime.fromMillis(timeRange[0]).startOf("day").toMillis(),
+                DateTime.fromMillis(timeRange[1]).endOf("day").toMillis()
+              )
+            );
+          } catch (e) {
+            return [];
+          }
+
+        default:
+          return [];
+      }

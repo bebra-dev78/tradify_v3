@@ -15,7 +15,7 @@ export default function AppLogo() {
         NProgress.done();
       }}
     >
-      <Image src={logo} alt="Логотип Tradify" priority />
+      <Image src={logo} priority />
     </Link>
   );
 }

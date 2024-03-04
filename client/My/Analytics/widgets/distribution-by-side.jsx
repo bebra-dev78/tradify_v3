@@ -7,12 +7,12 @@ import Skeleton from "@mui/material/Skeleton";
 import Card from "@mui/material/Card";
 import Box from "@mui/material/Box";
 
-import { useMemo, memo } from "react";
 import Chart from "react-apexcharts";
+import { useMemo } from "react";
 
 import Iconify from "#/utils/iconify";
 
-export default memo(function DistributionBySide({
+export default function DistributionBySide({
   data,
   isLoading,
   handleDeleteWidget,
@@ -23,6 +23,7 @@ export default memo(function DistributionBySide({
     if (data) {
       let l = 0;
       let s = 0;
+
       data.forEach((trade) => {
         if (trade.side === "BUY") {
           l++;
@@ -30,8 +31,11 @@ export default memo(function DistributionBySide({
           s++;
         }
       });
+
       return [l, s];
-    } else [0, 0];
+    } else {
+      return [0, 0];
+    }
   }, [data]);
 
   return isLoading ? (
@@ -60,11 +64,15 @@ export default memo(function DistributionBySide({
         options={{
           chart: {
             type: "donut",
+            animations: {
+              dynamicAnimation: {
+                enabled: false,
+              },
+            },
           },
           labels: ["LONG", "SHORT"],
           colors: [theme.palette.info.main, theme.palette.warning.main],
           stroke: {
-            show: true,
             colors: [theme.palette.background.paper],
             width: 3,
           },
@@ -90,7 +98,7 @@ export default memo(function DistributionBySide({
             enabled: false,
           },
           tooltip: {
-            fillSeriesColor: false,
+            enabled: false,
           },
           plotOptions: {
             pie: {
@@ -127,7 +135,7 @@ export default memo(function DistributionBySide({
           },
         }}
         series={counter}
-        height={"70%"}
+        height="70%"
         type="donut"
       />
       <Box sx={{ flexGrow: 1 }} />
@@ -144,4 +152,4 @@ export default memo(function DistributionBySide({
       />
     </Card>
   );
-});
+}

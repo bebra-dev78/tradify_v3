@@ -1,19 +1,12 @@
 "use client";
 
 import TextField from "@mui/material/TextField";
-import Popover from "@mui/material/Popover";
 import Button from "@mui/material/Button";
 import Stack from "@mui/material/Stack";
 
 import { useState, useRef } from "react";
 
-export default function AddBoardMenu({
-  open,
-  boards,
-  anchorEl,
-  setBoards,
-  setAnchorEl,
-}) {
+export default function AddBoardMenu({ boards, setBoards, setAnchorEl }) {
   const [titleError, setTitleError] = useState("");
 
   const titleRef = useRef(null);
@@ -22,8 +15,9 @@ export default function AddBoardMenu({
     let titleErrorMessage = "";
 
     const title = titleRef.current.value;
+
     switch (true) {
-      case !title:
+      case !/[a-zA-Zа-яА-Я]/.test(title):
         titleErrorMessage = "Название не указано";
         break;
       case title.length > 26:
@@ -51,68 +45,48 @@ export default function AddBoardMenu({
   }
 
   return (
-    <Popover
-      open={open}
-      anchorEl={anchorEl}
-      anchorOrigin={{
-        vertical: "bottom",
-        horizontal: "center",
-      }}
-      transformOrigin={{
-        vertical: "top",
-        horizontal: "center",
-      }}
-      onClose={() => {
-        setAnchorEl(null);
-        setTitleError("");
-        titleRef.current.value = "";
-      }}
-      sx={{ mt: "30px" }}
-    >
-      <Stack sx={{ m: 2 }}>
-        <TextField
-          label="Название"
-          name="firstName"
-          type="text"
-          autoFocus
+    <Stack sx={{ m: 2 }}>
+      <TextField
+        label="Название"
+        autoFocus
+        autoComplete="off"
+        variant="outlined"
+        color="info"
+        inputRef={titleRef}
+        onChange={() => {
+          setTitleError("");
+        }}
+        error={Boolean(titleError)}
+        helperText={titleError}
+      />
+      <Stack
+        sx={{
+          mt: 2,
+          flexDirection: "row",
+          justifyContent: "space-between",
+        }}
+      >
+        <Button
           variant="outlined"
-          color="info"
-          inputRef={titleRef}
-          onChange={() => {
+          color="inherit"
+          size="medium"
+          onClick={() => {
+            setAnchorEl(null);
             setTitleError("");
-          }}
-          error={Boolean(titleError)}
-          helperText={titleError}
-        />
-        <Stack
-          sx={{
-            mt: 2,
-            flexDirection: "row",
-            justifyContent: "space-between",
+            titleRef.current.value = "";
           }}
         >
-          <Button
-            variant="outlined"
-            color="inherit"
-            size="medium"
-            onClick={() => {
-              setAnchorEl(null);
-              setTitleError("");
-              titleRef.current.value = "";
-            }}
-          >
-            Отмена
-          </Button>
-          <Button
-            variant="contained"
-            color="inherit"
-            size="medium"
-            onClick={handleSubmit}
-          >
-            Добавить
-          </Button>
-        </Stack>
+          Отмена
+        </Button>
+        <Button
+          variant="contained"
+          color="inherit"
+          size="medium"
+          onClick={handleSubmit}
+        >
+          Добавить
+        </Button>
       </Stack>
-    </Popover>
+    </Stack>
   );
 }

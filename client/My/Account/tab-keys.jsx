@@ -1,29 +1,25 @@
 "use client";
 
 import DialogContentText from "@mui/material/DialogContentText";
-import FormHelperText from "@mui/material/FormHelperText";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
-import FormControl from "@mui/material/FormControl";
+import CardContent from "@mui/material/CardContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import LoadingButton from "@mui/lab/LoadingButton";
 import Typography from "@mui/material/Typography";
-import InputLabel from "@mui/material/InputLabel";
 import IconButton from "@mui/material/IconButton";
 import TextField from "@mui/material/TextField";
 import Container from "@mui/material/Container";
-import MenuItem from "@mui/material/MenuItem";
 import Divider from "@mui/material/Divider";
 import Dialog from "@mui/material/Dialog";
-import Select from "@mui/material/Select";
 import Button from "@mui/material/Button";
+import Radio from "@mui/material/Radio";
 import Stack from "@mui/material/Stack";
 import Card from "@mui/material/Card";
 import Grid from "@mui/material/Grid";
-import Chip from "@mui/material/Chip";
 import Box from "@mui/material/Box";
 
-import { useState, useRef, memo } from "react";
+import { useState, useRef, useEffect } from "react";
 import useSWRImmutable from "swr/immutable";
 import { useSWRConfig } from "swr";
 import NProgress from "nprogress";
@@ -44,34 +40,48 @@ const EXCHANGES = {
   2: "Bybit Linear",
 };
 
-const AddKeyPanel = memo(function AddKeyPanel({ setLoadingTrades }) {
+const exchanges_cards = [
+  {
+    id: 1,
+    title: "Binance Futures",
+  },
+  { id: 2, title: "Bybit Linear" },
+];
+
+function AddKeyPanel({ setLoadingTrades }) {
   const { keys, setKeys } = useKeys();
   const { mutate } = useSWRConfig();
   const { user } = useUser();
 
   const [showSuccessSnackbar, setShowSuccessSnackbar] = useState(false);
   const [secretkeyError, setSecretkeyError] = useState("");
-  const [exchangeError, setExchangeError] = useState("");
   const [openDialog, setOpenDialog] = useState(false);
   const [apikeyError, setApikeyError] = useState("");
   const [titleError, setTitleError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [value, setValue] = useState("");
 
-  const secretkeyRef = useRef(null);
-  const exchangeRef = useRef(null);
-  const apikeyRef = useRef(null);
-  const titleRef = useRef(null);
+  const secretkeyRef = useRef("");
+  const apikeyRef = useRef("");
+  const titleRef = useRef("");
+
+  useEffect(() => {
+    setTitleError("");
+    setApikeyError("");
+    setSecretkeyError("");
+    titleRef.current = "";
+    apikeyRef.current = "";
+    secretkeyRef.current = "";
+  }, [value]);
 
   function handleSubmit() {
     let secretkeyMessage = "";
-    let exchangeMessage = "";
     let apikeyMessage = "";
     let titleMessage = "";
 
-    const secretkey = secretkeyRef.current.value;
-    const exchange = exchangeRef.current.value;
-    const apikey = apikeyRef.current.value;
-    const title = titleRef.current.value;
+    const secretkey = secretkeyRef.current;
+    const apikey = apikeyRef.current;
+    const title = titleRef.current;
 
     switch (true) {
       case apikey.length < 10:
@@ -115,19 +125,10 @@ const AddKeyPanel = memo(function AddKeyPanel({ setLoadingTrades }) {
         break;
     }
 
-    switch (true) {
-      case !exchange:
-        exchangeMessage = "Выберите биржу";
-        break;
-      default:
-        break;
-    }
-
-    if (apikeyMessage || secretkeyMessage || titleMessage || exchangeMessage) {
-      setApikeyError(apikeyMessage);
+    if (apikeyMessage || secretkeyMessage || titleMessage) {
       setSecretkeyError(secretkeyMessage);
+      setApikeyError(apikeyMessage);
       setTitleError(titleMessage);
-      setExchangeError(exchangeMessage);
       return;
     }
 
@@ -135,8 +136,8 @@ const AddKeyPanel = memo(function AddKeyPanel({ setLoadingTrades }) {
 
     const now = Date.now();
 
-    switch (exchange) {
-      case 1:
+    switch (value) {
+      case "Binance Futures":
         axios
           .get("https://fapi.binance.com/fapi/v1/time")
           .then(({ data: { serverTime } }) => {
@@ -179,40 +180,38 @@ const AddKeyPanel = memo(function AddKeyPanel({ setLoadingTrades }) {
                     symbols.add(e.symbol);
                   });
 
-                createKey(user.id, apikey, secretkey, title, exchange).then(
-                  (k) => {
-                    setLoading(false);
+                createKey(user.id, apikey, secretkey, title, 1).then((k) => {
+                  setLoading(false);
 
-                    if (k === null) {
-                      setApikeyError("Такой ключ уже существует");
-                      return;
-                    }
-
-                    setOpenDialog(false);
-                    setShowSuccessSnackbar(true);
-                    setKeys((prev) => [...prev, k]);
-                    setLoadingTrades({ id: k.id, status: true });
-                    secretkeyRef.current.value = "";
-                    exchangeRef.current.value = "";
-                    apikeyRef.current.value = "";
-                    titleRef.current.value = "";
-                    setSecretkeyError("");
-                    setApikeyError("");
-
-                    createBynanceTrades(
-                      user.id,
-                      k.id,
-                      apikey,
-                      Array.from(symbols),
-                      secretkey,
-                      now - 2592000000
-                    ).then((b) => {
-                      console.log("createBynanceTrades: ", b);
-                      setLoadingTrades({ id: null, status: false });
-                      mutate("null");
-                    });
+                  if (k === null) {
+                    setApikeyError("Такой ключ уже существует");
+                    return;
                   }
-                );
+
+                  setOpenDialog(false);
+                  setShowSuccessSnackbar(true);
+                  setKeys((prev) => [...prev, k]);
+                  setLoadingTrades({ id: k.id, status: true });
+                  setSecretkeyError("");
+                  setApikeyError("");
+                  setTitleError("");
+                  secretkeyRef.current = "";
+                  apikeyRef.current = "";
+                  titleRef.current = "";
+
+                  createBynanceTrades(
+                    user.id,
+                    k.id,
+                    apikey,
+                    Array.from(symbols),
+                    secretkey,
+                    now - 2592000000
+                  ).then((b) => {
+                    console.log("createBynanceTrades: ", b);
+                    setLoadingTrades({ id: null, status: false });
+                    mutate("null");
+                  });
+                });
               })
               .catch((e) => {
                 setLoading(false);
@@ -223,7 +222,7 @@ const AddKeyPanel = memo(function AddKeyPanel({ setLoadingTrades }) {
           });
         break;
 
-      case 2:
+      case "Bybit Linear":
         axios.get("https://api.bybit.com/v5/market/time").then(({ data }) => {
           axios
             .get(
@@ -242,39 +241,33 @@ const AddKeyPanel = memo(function AddKeyPanel({ setLoadingTrades }) {
             )
             .then(({ data }) => {
               if (data.retMsg === "OK") {
-                createKey(user.id, apikey, secretkey, title, exchange).then(
-                  (k) => {
-                    setLoading(false);
+                createKey(user.id, apikey, secretkey, title, 2).then((k) => {
+                  setLoading(false);
 
-                    if (k === null) {
-                      setApikeyError("Такой ключ уже существует");
-                      return;
-                    }
+                  if (k === null) {
+                    setApikeyError("Такой ключ уже существует");
+                    return;
+                  }
 
-                    setOpenDialog(false);
-                    setShowSuccessSnackbar(true);
-                    setKeys((prev) => [...prev, k]);
-                    setLoadingTrades({ id: k.id, status: true });
-                    secretkeyRef.current.value = "";
-                    exchangeRef.current.value = "";
-                    apikeyRef.current.value = "";
-                    titleRef.current.value = "";
-                    setSecretkeyError("");
-                    setApikeyError("");
+                  setOpenDialog(false);
+                  setShowSuccessSnackbar(true);
+                  setKeys((prev) => [...prev, k]);
+                  setLoadingTrades({ id: k.id, status: true });
+                  setSecretkeyError("");
+                  setApikeyError("");
+                  setTitleError("");
+                  secretkeyRef.current = "";
+                  apikeyRef.current = "";
+                  titleRef.current = "";
 
-                    createBybitTrades(
-                      user.id,
-                      k.id,
-                      apikey,
-                      secretkey,
-                      now
-                    ).then((b) => {
+                  createBybitTrades(user.id, k.id, apikey, secretkey, now).then(
+                    (b) => {
                       console.log("createBybitTrades: ", b);
                       setLoadingTrades({ id: null, status: false });
                       mutate("null");
-                    });
-                  }
-                );
+                    }
+                  );
+                });
               } else {
                 setLoading(false);
                 setApikeyError("Неверный ключ");
@@ -307,396 +300,82 @@ const AddKeyPanel = memo(function AddKeyPanel({ setLoadingTrades }) {
       >
         доступно ключей: {2 - keys.length}
       </Typography>
-      <Box sx={{ position: "absolute", top: "24px", right: "24px" }}>
-        <Button
-          variant="contained"
-          color="inherit"
-          size="medium"
-          disabled={keys.length > 1}
-          startIcon={<Iconify icon="line-md:plus" width={20} />}
-          onClick={() => {
-            setOpenDialog(true);
-          }}
-        >
-          Новый ключ
-        </Button>
-        <Dialog
-          open={openDialog}
-          fullWidth
-          maxWidth="sm"
-          PaperProps={{
-            sx: {
-              padding: 0,
-              boxShadow: "none",
-              borderRadius: "16px",
-              backdropFilter: "none",
-              backgroundImage: "none",
-              backgroundPosition: "unset",
-              backgroundRepeat: "no-repeat",
-            },
-          }}
-        >
-          <DialogTitle sx={{ p: "24px 24px 16px" }}>
-            Добавить API-ключ
-          </DialogTitle>
-          <DialogContent sx={{ pr: 3, pl: 3 }}>
-            <Stack sx={{ gap: 2, pt: 2 }}>
-              <TextField
-                label="API-ключ"
-                name="api"
-                type="text"
-                variant="outlined"
-                color="warning"
-                fullWidth
-                inputRef={apikeyRef}
-                onChange={() => {
-                  setApikeyError("");
-                }}
-                FormHelperTextProps={{ sx: { m: "8px 14px 0px" } }}
-                error={Boolean(apikeyError)}
-                helperText={
-                  apikeyError || "Ключ должен быть доступен с любого IP-адреса."
-                }
-              />
-              <TextField
-                label="Cекретный ключ"
-                name="secret"
-                type="text"
-                variant="outlined"
-                color="info"
-                fullWidth
-                inputRef={secretkeyRef}
-                onChange={() => {
-                  setSecretkeyError("");
-                }}
-                error={Boolean(secretkeyError)}
-                helperText={secretkeyError}
-              />
-              <TextField
-                label="Название ключа"
-                name="title"
-                type="text"
-                variant="outlined"
-                color="secondary"
-                fullWidth
-                inputRef={titleRef}
-                onChange={() => {
-                  setTitleError("");
-                }}
-                error={Boolean(titleError)}
-                helperText={titleError}
-              />
-              <FormControl fullWidth error={Boolean(exchangeError)}>
-                <InputLabel>Биржа</InputLabel>
-                <Select
-                  label="Биржа"
-                  inputRef={exchangeRef}
-                  renderValue={(value) => (
-                    <Chip
-                      label={EXCHANGES[value]}
-                      color="warning"
-                      variant="soft"
-                      size="medium"
-                    />
-                  )}
-                  onChange={() => {
-                    setExchangeError("");
-                  }}
-                >
-                  {keys.every((key) => key.exchange !== 1) && (
-                    <MenuItem value={1}>Binance Futures</MenuItem>
-                  )}
-                  {keys.every((key) => key.exchange !== 2) && (
-                    <MenuItem value={2}>Bybit Linear</MenuItem>
-                  )}
-                </Select>
-                <FormHelperText>{exchangeError}</FormHelperText>
-              </FormControl>
-            </Stack>
-          </DialogContent>
-          <DialogActions>
-            <Button
-              variant="outlined"
-              color="inherit"
-              size="medium"
-              onClick={() => {
-                setOpenDialog(false);
-                setTitleError("");
-                setApikeyError("");
-                setExchangeError("");
-                setSecretkeyError("");
-                titleRef.current.value = "";
-                apikeyRef.current.value = "";
-                exchangeRef.current.value = "";
-                secretkeyRef.current.value = "";
-              }}
-            >
-              Отмена
-            </Button>
-            <LoadingButton
-              variant="contained"
-              color="inherit"
-              size="medium"
-              loading={loading}
-              onClick={handleSubmit}
-            >
-              Добавить
-            </LoadingButton>
-          </DialogActions>
-        </Dialog>
-        <SuccessSnackbar
-          showSuccessSnackbar={showSuccessSnackbar}
-          setShowSuccessSnackbar={setShowSuccessSnackbar}
-        />
-      </Box>
-    </>
-  );
-});
-
-const KeyCard = memo(function KeyCard({ apikey, i, loadingTrades }) {
-  const { mutate } = useSWRConfig();
-  const { setKeys } = useKeys();
-
-  const { data } = useSWRImmutable("null");
-
-  const [showSuccessSnackbar, setShowSuccessSnackbar] = useState(false);
-  const [deleteConfirmation, setDeleteConfirmation] = useState(false);
-  const [editedTitleError, setEditedTitleError] = useState("");
-  const [editedTitle, setEditedTitle] = useState("");
-  const [editMode, setEditMode] = useState(false);
-
-  const selectedKeyIdRef = useRef(null);
-  const editIndexRef = useRef(null);
-
-  function handleSaveTitle(id, newTitle) {
-    let editedTitleMessage = "";
-
-    switch (true) {
-      case newTitle.length < 3:
-        editedTitleMessage = "Не менее 3 символов";
-        break;
-      case newTitle.length > 18:
-        editedTitleMessage = "Не более 18 символов";
-        break;
-      case !/^[A-Za-zА-Яа-яЁё\d\s.,!?()-]+$/.test(newTitle):
-        editedTitleMessage = "Некорректное название";
-        break;
-      default:
-        break;
-    }
-
-    if (editedTitleMessage) {
-      setEditedTitleError(editedTitleMessage);
-      return;
-    }
-
-    setShowSuccessSnackbar(true);
-    setEditMode(false);
-    setEditedTitle("");
-    setKeys((prev) =>
-      prev.map((key) => (key.id === id ? { ...key, title: newTitle } : key))
-    );
-    editIndexRef.current = null;
-    updateTitle(id, newTitle);
-  }
-
-  return (
-    <>
-      <Card
-        sx={{
-          p: 1,
-          position: "relative",
-          transition: "height 0.3s ease-in-out",
-          height: editIndexRef.current === i ? "auto" : "260px",
+      <Button
+        variant="contained"
+        color="inherit"
+        size="medium"
+        disabled={keys.length > 1}
+        startIcon={<Iconify icon="line-md:plus" width={20} />}
+        onClick={() => {
+          setOpenDialog(true);
         }}
+        sx={{ position: "absolute", top: "24px", right: "24px" }}
       >
-        <Stack
-          sx={{
-            mt: 3,
-            flexDirection: "row",
-            justifyContent: "space-between",
-          }}
-        >
-          <Box
-            sx={{
-              ml: 3,
-            }}
-          >
-            <Image
-              src="/images/tiktok.png"
-              width={48}
-              height={48}
-              style={{ borderRadius: "12px" }}
-            />
-          </Box>
-          <Box sx={{ mt: -3 }}>
-            <IconButton
-              onClick={() => {
-                setEditMode((prev) => !prev);
-                editIndexRef.current = i === editIndexRef.current ? null : i;
-                setEditedTitle(apikey.title);
-                setEditedTitleError("");
-              }}
-              sx={{
-                top: 1,
-                right: 1,
-                color: "text.secondary",
-              }}
-            >
-              <Iconify icon="solar:pen-bold" width={20} />
-            </IconButton>
-            <IconButton
-              onClick={() => {
-                selectedKeyIdRef.current = apikey.id;
-                setDeleteConfirmation(true);
-              }}
-              sx={{
-                top: 1,
-                right: 1,
-                color: "error.main",
-              }}
-            >
-              <Iconify icon="solar:trash-bin-trash-bold" width={20} />
-            </IconButton>
-          </Box>
-        </Stack>
-        <Stack sx={{ p: "20px 24px 16px" }}>
-          <Box sx={{ mb: 1 }}>
-            {editIndexRef.current !== i ? (
-              <Typography variant="body1" sx={{ color: "text.primary" }}>
-                {apikey.title}
-              </Typography>
-            ) : (
-              <>
-                <TextField
-                  variant="standard"
-                  size="small"
-                  value={editMode ? editedTitle : apikey.title}
-                  onChange={(e) => {
-                    setEditedTitle(e.target.value);
-                    setEditedTitleError("");
-                  }}
-                  error={Boolean(editedTitleError)}
-                  helperText={editedTitleError}
-                />
-                <IconButton
-                  onClick={() => {
-                    handleSaveTitle(apikey.id, editedTitle);
-                  }}
-                >
-                  <Iconify icon="solar:sd-card-bold-duotone" width={20} />
-                </IconButton>
-              </>
-            )}
-            <Typography
-              variant="body2"
-              sx={{ color: "text.disabled", mt: 1, mb: "4px" }}
-            >
-              {EXCHANGES[apikey.exchange]}
-            </Typography>
-            {loadingTrades.status === true && loadingTrades.id === apikey.id ? (
-              <Stack
-                sx={{
-                  gap: "4px",
-                  fontWeight: 400,
-                  lineHeight: 1.5,
-                  cursor: "default",
-                  fontSize: "0.75rem",
-                  flexDirection: "row",
-                  alignItems: "center",
-                  color: "warning.main",
-                }}
-              >
-                <Iconify
-                  icon="line-md:downloading-loop"
-                  sx={{ mr: "3px", mt: "3px" }}
-                />
-                Загрузка сделок...
-              </Stack>
-            ) : (
-              <Stack
-                sx={{
-                  gap: "4px",
-                  fontWeight: 400,
-                  lineHeight: 1.5,
-                  cursor: "default",
-                  fontSize: "0.75rem",
-                  flexDirection: "row",
-                  alignItems: "center",
-                  color: "primary.main",
-                }}
-              >
-                <Iconify
-                  icon="solar:playback-speed-bold-duotone"
-                  sx={{ mr: "3px", mt: "3px" }}
-                />
-                Подключено
-              </Stack>
-            )}
-          </Box>
-        </Stack>
-        <Divider
-          sx={{
-            borderWidth: "0px 0px thin",
-            borderStyle: "dashed",
-            borderColor: "rgba(145, 158, 171, 0.2)",
-          }}
-        />
-        <Box
-          sx={{
-            p: 3,
-            rowGap: 2,
-            display: "grid",
-            gridTemplateColumns: "repeat(2, 1fr)",
-          }}
-        />
-      </Card>
+        Новый ключ
+      </Button>
       <Dialog
-        open={deleteConfirmation}
-        onClose={() => {
-          setDeleteConfirmation(false);
+        open={openDialog}
+        fullWidth
+        scroll="paper"
+        PaperProps={{
+          sx: {
+            padding: 0,
+          },
         }}
       >
-        <DialogTitle sx={{ fontWeight: 700, p: 3, color: "text.primary" }}>
-          Подтвердите действие
+        <DialogTitle sx={{ p: "24px 24px 16px" }}>
+          Добавить API-ключ
         </DialogTitle>
-        <DialogContent sx={{ pl: 3, pr: 3 }}>
-          <DialogContentText>
-            Вы уверены, что хотите удалить этот ключ?
-          </DialogContentText>
+        <DialogContent sx={{ pr: 3, pl: 3, mt: 1 }}>
+          <Grid container spacing={2} direction="column">
+            {exchanges_cards.map((card) => (
+              <ExchangeCard
+                id={card.id}
+                key={card.id}
+                value={value}
+                title={card.title}
+                setValue={setValue}
+                titleRef={titleRef}
+                apikeyRef={apikeyRef}
+                titleError={titleError}
+                apikeyError={apikeyError}
+                secretkeyRef={secretkeyRef}
+                setTitleError={setTitleError}
+                secretkeyError={secretkeyError}
+                setApikeyError={setApikeyError}
+                setSecretkeyError={setSecretkeyError}
+              />
+            ))}
+          </Grid>
         </DialogContent>
-        <DialogActions sx={{ p: 3 }}>
-          <Button
-            variant="contained"
-            color="error"
-            size="medium"
-            onClick={() => {
-              setDeleteConfirmation(false);
-              setKeys((prev) =>
-                prev.filter((k) => k.id !== selectedKeyIdRef.current)
-              );
-              setShowSuccessSnackbar(true);
-              deleteKey(selectedKeyIdRef.current).then(() => {
-                mutate(
-                  "null",
-                  data.filter((i) => i.kid !== selectedKeyIdRef.current)
-                );
-              });
-            }}
-          >
-            Удалить
-          </Button>
+        <DialogActions>
           <Button
             variant="outlined"
             color="inherit"
             size="medium"
-            autoFocus
             onClick={() => {
-              setDeleteConfirmation(false);
+              setOpenDialog(false);
+              setTitleError("");
+              setApikeyError("");
+              setSecretkeyError("");
+              titleRef.current = "";
+              apikeyRef.current = "";
+              secretkeyRef.current = "";
+              setValue("");
             }}
           >
             Отмена
           </Button>
+          <LoadingButton
+            variant="contained"
+            color="inherit"
+            size="medium"
+            loading={loading}
+            onClick={handleSubmit}
+            disabled={value === ""}
+          >
+            Добавить
+          </LoadingButton>
         </DialogActions>
       </Dialog>
       <SuccessSnackbar
@@ -705,9 +384,142 @@ const KeyCard = memo(function KeyCard({ apikey, i, loadingTrades }) {
       />
     </>
   );
-});
+}
 
-const KeysContainer = memo(function KeysContainer({ loadingTrades }) {
+function ExchangeCard({
+  id,
+  title,
+  value,
+  setValue,
+  titleRef,
+  apikeyRef,
+  titleError,
+  apikeyError,
+  secretkeyRef,
+  setTitleError,
+  setApikeyError,
+  secretkeyError,
+  setSecretkeyError,
+}) {
+  const { keys } = useKeys();
+
+  const checked = title === value;
+
+  return (
+    keys.every((key) => key.exchange !== id) && (
+      <Grid item>
+        <Card
+          sx={{
+            cursor: "pointer",
+            border: "1px solid rgba(145, 158, 171, 0.16)",
+          }}
+          onClick={() => {
+            setValue(title);
+          }}
+        >
+          <CardContent sx={{ p: "24px" }}>
+            <Grid container>
+              <Grid item xs="auto">
+                <Radio
+                  size="small"
+                  checked={checked}
+                  value={title}
+                  onChange={(e) => {
+                    setValue(e.target.value);
+                  }}
+                />
+              </Grid>
+              <Grid item xs={true}>
+                <div
+                  style={{
+                    right: 0,
+                    width: "64px",
+                    height: "64px",
+                    position: "absolute",
+                  }}
+                >
+                  <Box component="span">
+                    <Image
+                      src="/images/tiktok.png"
+                      width={48}
+                      height={48}
+                      style={{
+                        borderRadius: "12px",
+                      }}
+                    />
+                  </Box>
+                </div>
+                <Typography
+                  component="div"
+                  variant="overline"
+                  sx={{ mt: "10px" }}
+                >
+                  {title}
+                </Typography>
+                {checked && (
+                  <Stack sx={{ gap: 2, pt: 2, mt: 4, maxWidth: 360 }}>
+                    <TextField
+                      label="API-ключ"
+                      name="api"
+                      type="text"
+                      size="small"
+                      variant="outlined"
+                      color="warning"
+                      fullWidth
+                      autoFocus
+                      onChange={(e) => {
+                        apikeyRef.current = e.target.value;
+                        setApikeyError("");
+                      }}
+                      FormHelperTextProps={{ sx: { m: "8px 14px 0px" } }}
+                      error={Boolean(apikeyError)}
+                      helperText={
+                        apikeyError ||
+                        "Ключ должен быть доступен с любого IP-адреса."
+                      }
+                    />
+                    <TextField
+                      label="Cекретный ключ"
+                      name="secret"
+                      type="text"
+                      size="small"
+                      variant="outlined"
+                      color="info"
+                      fullWidth
+                      onChange={(e) => {
+                        secretkeyRef.current = e.target.value;
+                        setSecretkeyError("");
+                      }}
+                      error={Boolean(secretkeyError)}
+                      helperText={secretkeyError}
+                    />
+                    <TextField
+                      label="Название ключа"
+                      name="title"
+                      type="text"
+                      size="small"
+                      variant="outlined"
+                      color="secondary"
+                      fullWidth
+                      onChange={(e) => {
+                        titleRef.current = e.target.value;
+                        setTitleError("");
+                      }}
+                      error={Boolean(titleError)}
+                      helperText={titleError}
+                    />
+                  </Stack>
+                )}
+              </Grid>
+            </Grid>
+          </CardContent>
+        </Card>
+      </Grid>
+    )
+  );
+}
+
+function KeysContainer({ loadingTrades }) {
   const { keys } = useKeys();
 
   return keys.length > 0 ? (
@@ -748,7 +560,261 @@ const KeysContainer = memo(function KeysContainer({ loadingTrades }) {
       />
     </Box>
   );
-});
+}
+
+function KeyCard({ apikey, i, loadingTrades }) {
+  const { mutate } = useSWRConfig();
+  const { setKeys } = useKeys();
+
+  const { data } = useSWRImmutable("null");
+
+  const [showSuccessSnackbar, setShowSuccessSnackbar] = useState(false);
+  const [deleteConfirmation, setDeleteConfirmation] = useState(false);
+  const [editedTitleError, setEditedTitleError] = useState("");
+  const [editMode, setEditMode] = useState(false);
+
+  const editedTitleRef = useRef("");
+  const editIndexRef = useRef(i);
+
+  function handleSaveTitle(newTitle) {
+    let editedTitleMessage = "";
+
+    switch (true) {
+      case newTitle.length < 3:
+        editedTitleMessage = "Не менее 3 символов";
+        break;
+      case newTitle.length > 18:
+        editedTitleMessage = "Не более 18 символов";
+        break;
+      case !/^[A-Za-zА-Яа-яЁё\d\s.,!?()-]+$/.test(newTitle):
+        editedTitleMessage = "Некорректное название";
+        break;
+      default:
+        break;
+    }
+
+    if (editedTitleMessage) {
+      setEditedTitleError(editedTitleMessage);
+      return;
+    }
+
+    setShowSuccessSnackbar(true);
+    setEditMode(false);
+    editedTitleRef.current = "";
+    setKeys((prev) =>
+      prev.map((key) =>
+        key.id === apikey.id ? { ...key, title: newTitle } : key
+      )
+    );
+    editIndexRef.current = null;
+    updateTitle(apikey.id, newTitle);
+  }
+
+  return (
+    <>
+      <Card
+        sx={{
+          p: 1,
+          position: "relative",
+          transition: "height 0.3s ease-in-out",
+          height: editMode ? "auto" : "260px",
+        }}
+      >
+        <Stack
+          sx={{
+            mt: 3,
+            flexDirection: "row",
+            justifyContent: "space-between",
+          }}
+        >
+          <Box
+            sx={{
+              ml: 3,
+            }}
+          >
+            <Image
+              src="/images/tiktok.png"
+              width={48}
+              height={48}
+              style={{ borderRadius: "12px" }}
+            />
+          </Box>
+          <Box sx={{ mt: -3 }}>
+            <IconButton
+              onClick={() => {
+                setEditMode((prev) => !prev);
+                editedTitleRef.current = apikey.title;
+              }}
+              sx={{
+                top: 1,
+                right: 1,
+                color: "text.secondary",
+              }}
+            >
+              <Iconify icon="solar:pen-bold" width={20} />
+            </IconButton>
+            <IconButton
+              onClick={() => {
+                setDeleteConfirmation(true);
+              }}
+              sx={{
+                top: 1,
+                right: 1,
+                color: "error.main",
+              }}
+            >
+              <Iconify icon="solar:trash-bin-trash-bold" width={20} />
+            </IconButton>
+          </Box>
+        </Stack>
+        <Stack sx={{ p: "20px 24px 16px" }}>
+          <Box sx={{ mb: 1 }}>
+            {editMode === false ? (
+              <Typography variant="body1" sx={{ color: "text.primary" }}>
+                {apikey.title}
+              </Typography>
+            ) : (
+              <>
+                <TextField
+                  variant="standard"
+                  size="small"
+                  defaultValue={apikey.title}
+                  onChange={(e) => {
+                    editedTitleRef.current = e.target.value;
+                    setEditedTitleError("");
+                  }}
+                  error={Boolean(editedTitleError)}
+                  helperText={editedTitleError}
+                />
+                <IconButton
+                  onClick={() => {
+                    handleSaveTitle(editedTitleRef.current);
+                  }}
+                >
+                  <Iconify icon="solar:sd-card-bold-duotone" width={20} />
+                </IconButton>
+              </>
+            )}
+            <Typography
+              variant="overline"
+              component="div"
+              sx={{ color: "text.disabled", mt: 1 }}
+            >
+              {EXCHANGES[apikey.exchange]}
+            </Typography>
+          </Box>
+        </Stack>
+        <Divider
+          sx={{
+            borderWidth: "0px 0px thin",
+            borderStyle: "dashed",
+            borderColor: "rgba(145, 158, 171, 0.2)",
+          }}
+        />
+        <Box
+          sx={{
+            p: 3,
+            display: "grid",
+            gridTemplateColumns: "repeat(2, 1fr)",
+          }}
+        >
+          {loadingTrades.status === true && loadingTrades.id === apikey.id ? (
+            <Stack
+              sx={{
+                gap: "4px",
+                fontWeight: 400,
+                lineHeight: 1.5,
+                cursor: "default",
+                fontSize: "0.75rem",
+                flexDirection: "row",
+                alignItems: "center",
+                color: "warning.main",
+              }}
+            >
+              <Iconify
+                icon="line-md:downloading-loop"
+                sx={{ mr: "3px", mt: "3px" }}
+              />
+              Загрузка сделок...
+            </Stack>
+          ) : (
+            <Stack
+              sx={{
+                gap: "4px",
+                fontWeight: 400,
+                lineHeight: 1.5,
+                cursor: "default",
+                fontSize: "0.75rem",
+                flexDirection: "row",
+                alignItems: "center",
+                color: "primary.main",
+              }}
+            >
+              <Iconify
+                icon="solar:playback-speed-bold-duotone"
+                sx={{ mr: "3px", mt: "2px" }}
+              />
+              Подключено
+            </Stack>
+          )}
+        </Box>
+      </Card>
+      <Dialog
+        open={deleteConfirmation}
+        onClose={() => {
+          setDeleteConfirmation(false);
+        }}
+      >
+        <Typography
+          variant="h6"
+          sx={{ fontWeight: 700, p: 3, color: "text.primary" }}
+        >
+          Подтвердите действие
+        </Typography>
+        <DialogContent sx={{ p: "0px 24px" }}>
+          <DialogContentText>
+            Вы уверены, что хотите удалить этот ключ?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions sx={{ p: 3 }}>
+          <Button
+            variant="contained"
+            color="error"
+            size="medium"
+            autoFocus
+            onClick={() => {
+              setDeleteConfirmation(false);
+              setKeys((prev) => prev.filter((k) => k.id !== apikey.id));
+              setShowSuccessSnackbar(true);
+              deleteKey(apikey.id).then(() => {
+                mutate(
+                  "null",
+                  data.filter((i) => i.kid !== apikey.id)
+                );
+              });
+            }}
+          >
+            Удалить
+          </Button>
+          <Button
+            variant="outlined"
+            color="inherit"
+            size="medium"
+            onClick={() => {
+              setDeleteConfirmation(false);
+            }}
+          >
+            Отмена
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <SuccessSnackbar
+        showSuccessSnackbar={showSuccessSnackbar}
+        setShowSuccessSnackbar={setShowSuccessSnackbar}
+      />
+    </>
+  );
+}
 
 export default function TabKeys({ loadingTrades, setLoadingTrades }) {
   const { user } = useUser();

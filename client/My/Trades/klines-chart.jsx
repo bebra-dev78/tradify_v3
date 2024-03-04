@@ -862,7 +862,6 @@ const HeaderIndicators = memo(function HeaderIndicators({
 
 export default function KlinesChart({ dataRef, activate, setActivate }) {
   const isSmallScreen = useMediaQuery("(max-width:900px)");
-  const { mode } = useMode();
 
   const installMainIndicatorRef = useRef(null);
   const removeMainIndicatorRef = useRef(null);
@@ -1475,12 +1474,7 @@ export default function KlinesChart({ dataRef, activate, setActivate }) {
         mb: open ? 5 : 0,
       }}
     >
-      <Card
-        sx={{
-          backgroundColor:
-            mode === "dark" ? "rgb(16, 21, 27)" : "rgb(249, 250, 251)",
-        }}
-      >
+      <Card>
         <Stack
           sx={{
             pl: "6px",

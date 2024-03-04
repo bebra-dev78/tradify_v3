@@ -80,11 +80,7 @@ export default function Register() {
             zIndex: 1,
           }}
         >
-          <Image
-            src={auth_illustration}
-            priority={true}
-            alt="Регистрация в Tradify"
-          />
+          <Image src={auth_illustration} priority={true} />
         </Box>
         <AuthOverlay />
       </Box>

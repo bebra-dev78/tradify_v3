@@ -86,6 +86,7 @@ export default function DesktopNavInfoPopover() {
         onClose={() => {
           setAnchorEl(null);
         }}
+        slotProps={{ paper: { sx: { backgroundImage: "none" } } }}
       >
         <Stack>
           <Link href="/my/faq" style={{ marginBottom: "4px" }}>

@@ -17,7 +17,7 @@ import Stack from "@mui/material/Stack";
 import Card from "@mui/material/Card";
 import Box from "@mui/material/Box";
 
-import { forwardRef, useState, memo } from "react";
+import { forwardRef, useState } from "react";
 
 import { useMode } from "#/client/Global/theme-registry";
 import Iconify from "#/utils/iconify";
@@ -64,7 +64,7 @@ const widgets_cards = [
   },
 ];
 
-export default memo(function WidgetsDialog({
+export default function WidgetsDialog({
   boards,
   widgets,
   setWidgets,
@@ -260,4 +260,4 @@ export default memo(function WidgetsDialog({
       </Dialog>
     </>
   );
-});
+}
