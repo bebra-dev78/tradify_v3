@@ -8,11 +8,11 @@ import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { SWRConfig } from "swr";
 
-import FullDesktopNav from "#/client/My/full-desktop-nav";
-import MiniDesktopNav from "#/client/My/mini-desktop-nav";
-import Header from "#/client/My/header";
+import FullDesktopNav from "#/layout/full-desktop-nav";
+import MiniDesktopNav from "#/layout/mini-desktop-nav";
+import Header from "#/layout/header";
 
-const BottomNav = dynamic(() => import("#/client/My/bottom-nav"));
+const BottomNav = dynamic(() => import("#/layout/bottom-nav"));
 
 const UserContext = createContext();
 const KeysContext = createContext();

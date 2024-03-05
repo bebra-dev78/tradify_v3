@@ -6,12 +6,10 @@ import Container from "@mui/material/Container";
 import Grid from "@mui/material/Grid";
 import Box from "@mui/material/Box";
 
-import Link from "next/link";
-
-import RootPrimaryHeader from "#/client/Shared/root-primary-header";
-import SmoothAnimation from "#/client/FAQ/smooth-animation";
-import RootOverlay from "#/client/Shared/root-overlay";
-import RootFooter from "#/client/Shared/root-footer";
+import RootPrimaryHeader from "#/components/root-primary-header";
+import SmoothAnimation from "#/app/faq/smooth-animation";
+import RootOverlay from "#/components/root-overlay";
+import RootFooter from "#/components/root-footer";
 import Iconify from "#/utils/iconify";
 
 export const metadata = {
@@ -112,7 +110,7 @@ export default function RootFAQ() {
                   <Typography variant="body1">
                     Чтобы верифицировать аккаунт зарегистрируйтесь в сервисе и
                     перейдите на{" "}
-                    <Link href="https://mail.google.com/" target="_blank">
+                    <a href="https://mail.google.com/" target="_blank">
                       <Typography
                         component="strong"
                         sx={{
@@ -122,7 +120,7 @@ export default function RootFAQ() {
                       >
                         https://mail.google.com/
                       </Typography>
-                    </Link>
+                    </a>
                     . Вам будет отправлено письмо с подтверждением и ссылкой,
                     после нажатия на которую ваш аккаунт станет верифицированным
                     и вы сможете пользоваться сервисом без ограничений.
@@ -142,7 +140,7 @@ export default function RootFAQ() {
                 <AccordionDetails>
                   <Typography variant="body1">
                     Перейдите на страницу{" "}
-                    <Link href="/my/account/" target="_blank">
+                    <a href="/my/account/" target="_blank">
                       <Typography
                         component="span"
                         sx={{
@@ -152,7 +150,7 @@ export default function RootFAQ() {
                       >
                         Аккаунт
                       </Typography>
-                    </Link>{" "}
+                    </a>{" "}
                     и во вкладке "Ключи" добавьте новый API-ключ от
                     криптовалютной биржи, заполнив поля диалоговой формы. После
                     ввода ключ добавится и начнётся загрузка сделок от выбранной

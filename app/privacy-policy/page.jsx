@@ -3,9 +3,9 @@ import Container from "@mui/material/Container";
 import Stack from "@mui/material/Stack";
 import Box from "@mui/material/Box";
 
-import RootPrimaryHeader from "#/client/Shared/root-primary-header";
-import RootOverlay from "#/client/Shared/root-overlay";
-import RootFooter from "#/client/Shared/root-footer";
+import RootPrimaryHeader from "#/components/root-primary-header";
+import RootOverlay from "#/components/root-overlay";
+import RootFooter from "#/components/root-footer";
 
 export const metadata = {
   title: "Политика конфиденциальности | Tradify",

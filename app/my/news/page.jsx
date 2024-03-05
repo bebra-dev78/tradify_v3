@@ -5,8 +5,6 @@ import Grid from "@mui/material/Unstable_Grid2";
 import Alert from "@mui/material/Alert";
 import Card from "@mui/material/Card";
 
-import Link from "next/link";
-
 import Iconify from "#/utils/iconify";
 
 export const metadata = {
@@ -69,7 +67,7 @@ export default function News() {
         }}
       >
         Также все новости и информация о последних событиях сервиса есть в нашем{" "}
-        <Link href="https://t.me/tradifyy" prefetch={false} target="_blank">
+        <a href="https://t.me/tradifyy" target="_blank">
           <Typography
             variant="subtitle2"
             component="span"
@@ -82,7 +80,7 @@ export default function News() {
           >
             Telegram-канале
           </Typography>
-        </Link>
+        </a>
       </Alert>
       <Grid container spacing={3}>
         {news.map((item) => (

@@ -1,6 +1,6 @@
 import Typography from "@mui/material/Typography";
 
-import TabsWrapper from "#/client/My/Account/tabs-wrapper";
+import TabsWrapper from "#/layout/Account/tabs-wrapper";
 
 export const metadata = {
   title: "Аккаунт | Tradify",

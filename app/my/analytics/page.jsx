@@ -1,4 +1,4 @@
-import Index from "#/client/My/Analytics/index";
+import Index from "#/layout/Analytics/index";
 
 export const metadata = {
   title: "Аналитика | Tradify",

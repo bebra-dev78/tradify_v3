@@ -4,7 +4,7 @@ import { authConfig } from "#/utils/auth";
 import prisma from "#/utils/prisma";
 
 export async function GET() {
-  const s = await getServerSession(authConfig);
+  var s = await getServerSession(authConfig);
 
   if (s === null) {
     return Response.json(null);

@@ -75,7 +75,7 @@ export default function FAQ() {
               <Typography variant="body1">
                 Чтобы верифицировать аккаунт зарегистрируйтесь в сервисе и
                 перейдите на{" "}
-                <Link href="https://mail.google.com/" target="_blank">
+                <a href="https://mail.google.com/" target="_blank">
                   <Typography
                     component="strong"
                     sx={{
@@ -85,7 +85,7 @@ export default function FAQ() {
                   >
                     https://mail.google.com/
                   </Typography>
-                </Link>
+                </a>
                 . Вам будет отправлено письмо с подтверждением и ссылкой, после
                 нажатия на которую ваш аккаунт станет верифицированным и вы
                 сможете пользоваться сервисом без ограничений.
@@ -101,7 +101,7 @@ export default function FAQ() {
             <AccordionDetails>
               <Typography variant="body1">
                 Перейдите на страницу{" "}
-                <Link href="/my/account/" target="_blank">
+                <Link href="/my/account/">
                   <Typography
                     component="span"
                     sx={{

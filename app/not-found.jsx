@@ -5,12 +5,12 @@ import Box from "@mui/material/Box";
 
 import Script from "next/script";
 
-import RootSecondaryHeader from "#/client/Shared/root-secondary-header";
-import BackButton from "#/client/Other/back-button";
+import RootSecondaryHeader from "#/components/root-secondary-header";
+import BackButton from "#/components/other/back-button";
 
 export const metadata = {
   title: "Страница не найдена | Tradify",
-  description: "💊",
+  description: "Tradify — страница не найдена",
 };
 
 export default function NotFound() {
@@ -39,7 +39,6 @@ export default function NotFound() {
               m: "30px auto",
             }}
           >
-            <Script src="https://unpkg.com/@lottiefiles/lottie-player@2.0.3/dist/tgs-player.js" />
             <tgs-player
               autoplay
               loop
@@ -47,6 +46,7 @@ export default function NotFound() {
               src="/video/duck_not_found.tgs"
               style={{ height: "250px", width: "250px" }}
             />
+            <Script src="https://unpkg.com/@lottiefiles/lottie-player@2.0.3/dist/tgs-player.js" />
           </Box>
           <BackButton />
         </Stack>

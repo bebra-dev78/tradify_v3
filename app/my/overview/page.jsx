@@ -9,13 +9,13 @@ import Box from "@mui/material/Box";
 import Image from "next/image";
 import Link from "next/link";
 
-import { TimeLastNews, ButtonToNews } from "#/client/My/Overview/last-news";
-import InviteItemButton from "#/client/My/Overview/invite-item-button";
-import StatisticsItem from "#/client/My/Overview/statistics-item";
-import CommissionItem from "#/client/My/Overview/commission-item";
-import WelcomeItem from "#/client/My/Overview/welcome-item";
-import VolumeItem from "#/client/My/Overview/volume-item";
-import ProfitItem from "#/client/My/Overview/profit-item";
+import { TimeLastNews, ButtonToNews } from "#/layout/Overview/last-news";
+import InviteItemButton from "#/layout/Overview/invite-item-button";
+import StatisticsItem from "#/layout/Overview/statistics-item";
+import CommissionItem from "#/layout/Overview/commission-item";
+import WelcomeItem from "#/layout/Overview/welcome-item";
+import VolumeItem from "#/layout/Overview/volume-item";
+import ProfitItem from "#/layout/Overview/profit-item";
 import Iconify from "#/utils/iconify";
 
 import woman_2 from "#/public/images/woman_2.png";
