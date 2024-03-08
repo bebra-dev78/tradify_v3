@@ -39,146 +39,39 @@ export default function CumulativeCommission({
   });
 
   const [series, categories] = useMemo(() => {
-    if (data) {
-      let totalCommission = 0;
+    switch (timeRangeStatus) {
+      case "current-week":
+        const currentDate = DateTime.now();
+        const currentWeekStart = currentDate.startOf("week");
 
-      switch (timeRangeStatus) {
-        case "current-day":
-          var cumulativeCommission = Array(24).fill(0);
+        const cumulativeCommissionData = data
+          .filter((trade) => {
+            const tradeDate = DateTime.fromMillis(parseInt(trade.entry_time));
+            return tradeDate >= currentWeekStart && tradeDate <= currentDate;
+          })
+          .reduce((result, trade) => {
+            const tradeCommission = parseFloat(trade.comission);
+            const tradeDate = DateTime.fromMillis(parseInt(trade.entry_time));
 
-          data.forEach((trade) => {
-            var entryHour = moment(parseInt(trade.entry_time)).hour();
+            const dayOfWeek = tradeDate.weekday;
 
-            for (let i = entryHour; i < 24; i++) {
-              cumulativeCommission[i] += parseFloat(trade.comission);
+            if (!result[dayOfWeek]) {
+              result[dayOfWeek] = 0;
             }
-          });
 
-          return [
-            cumulativeCommission.map((totalCommission) =>
-              totalCommission.toFixed(3)
-            ),
-            Array(24)
-              .fill()
-              .map((_, index) =>
-                DateTime.now()
-                  .startOf("day")
-                  .plus({ hours: index })
-                  .toFormat("HH:mm")
-              ),
-          ];
+            result[dayOfWeek] += tradeCommission;
 
-        case "current-week":
-          const cumulativeCommissionWeek = Array(7).fill(0);
+            return result;
+          }, {});
 
-          data.forEach((trade) => {
-            const entryDay = moment(parseInt(trade.entry_time)).day();
+        const cumulativeCommissionSeries = Object.values(cumulativeCommissionData);
+        const cumulativeCommissionCategories = Object.keys(cumulativeCommissionData).map(
+          (dayOfWeek) => DateTime.fromObject({ weekday: parseInt(dayOfWeek) }).toFormat("dd:MM")
+        );
 
-            // Accumulate commission for the current day and subsequent days in the week
-            for (let i = entryDay; i < 7; i++) {
-              cumulativeCommissionWeek[i] += parseFloat(trade.comission);
-            }
-          });
-
-          return [
-            cumulativeCommissionWeek.map((totalCommission) =>
-              totalCommission.toFixed(3)
-            ),
-            Array(7)
-              .fill()
-              .map((_, index) =>
-                DateTime.now()
-                  .startOf("week")
-                  .plus({ days: index })
-                  .toFormat("dd.MM")
-              ),
-          ];
-
-        case "current-month":
-          const cumulativeCommissionMonth = Array(
-            DateTime.now().daysInMonth
-          ).fill(0);
-          let currentDayMonth = 1;
-
-          data.forEach((trade) => {
-            const entryDay = moment(parseInt(trade.entry_time)).date();
-
-            // Accumulate commission for the current day and subsequent days in the month
-            for (let i = entryDay - 1; i < DateTime.now().daysInMonth; i++) {
-              cumulativeCommissionMonth[i] += parseFloat(trade.comission);
-            }
-          });
-
-          return [
-            cumulativeCommissionMonth.map((totalCommission) =>
-              totalCommission.toFixed(3)
-            ),
-            Array(DateTime.now().daysInMonth)
-              .fill()
-              .map(() => (currentDayMonth++).toString()),
-          ];
-
-        case "last-7":
-          const cumulativeCommissionLast7 = Array(7).fill(0);
-
-          data.forEach((trade) => {
-            const entryDate = moment(parseInt(trade.entry_time)).format(
-              "YYYY-MM-DD"
-            );
-            const index = moment().diff(entryDate, "days");
-
-            // Accumulate commission for the current day and subsequent days in the last 7 days
-            if (index >= 0 && index < 7) {
-              cumulativeCommissionLast7[index] += parseFloat(trade.comission);
-            }
-          });
-
-          return [
-            cumulativeCommissionLast7.map((totalCommission) =>
-              totalCommission.toFixed(3)
-            ),
-            Array(7)
-              .fill()
-              .map((_, index) =>
-                DateTime.now()
-                  .minus({ days: 6 - index })
-                  .toFormat("dd.MM")
-              ),
-          ];
-
-        case "last-30":
-          const cumulativeCommissionLast30 = Array(30).fill(0);
-
-          data.forEach((trade) => {
-            const entryDate = moment(parseInt(trade.entry_time)).format(
-              "YYYY-MM-DD"
-            );
-            const index = moment().diff(entryDate, "days");
-
-            // Accumulate commission for the current day and subsequent days in the last 30 days
-            if (index >= 0 && index < 30) {
-              cumulativeCommissionLast30[index] += parseFloat(trade.comission);
-            }
-          });
-
-          return [
-            cumulativeCommissionLast30.map((totalCommission) =>
-              totalCommission.toFixed(3)
-            ),
-            Array(30)
-              .fill()
-              .map((_, index) =>
-                DateTime.now()
-                  .minus({ days: 29 - index })
-                  .toFormat("dd.MM")
-              ),
-          ];
-
-        default:
-          return [[], []];
-      }
-    } else {
-      return [[], []];
+        return [cumulativeCommissionSeries, cumulativeCommissionCategories];
+      default:
+        return [[], []];
     }
   }, [data, timeRange, timeRangeStatus]);
 

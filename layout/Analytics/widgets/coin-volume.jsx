@@ -16,9 +16,9 @@ import Iconify from "#/utils/iconify";
 export default function CoinVolume({ data, isLoading, handleDeleteWidget }) {
   const theme = useTheme();
 
-  const counter = useMemo(() => {
-    if (data) {
-      return Object.fromEntries(
+  const counter = useMemo(
+    () =>
+      Object.fromEntries(
         Object.entries(
           data.reduce((acc, trade) => {
             if (acc[trade.symbol]) {
@@ -29,11 +29,9 @@ export default function CoinVolume({ data, isLoading, handleDeleteWidget }) {
             return acc;
           }, {})
         ).sort((a, b) => a[1] - b[1])
-      );
-    } else {
-      return {};
-    }
-  }, [data]);
+      ),
+    [data]
+  );
 
   return isLoading ? (
     <Skeleton sx={{ height: "100%" }} />

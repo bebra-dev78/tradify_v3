@@ -21,43 +21,39 @@ export default memo(function CumulativeProfit({
   const theme = useTheme();
 
   const counter = useMemo(() => {
-    if (data) {
-      const last30DaysStart = moment()
-        .subtract(30, "days")
+    const last30DaysStart = moment()
+      .subtract(30, "days")
+      .startOf("day")
+      .valueOf();
+    const last30DaysEnd = moment().endOf("day").valueOf();
+
+    const last30DaysTrades = data.filter((trade) => {
+      const entryTime = parseInt(trade.entry_time);
+      return entryTime >= last30DaysStart && entryTime <= last30DaysEnd;
+    });
+
+    const cumulativeProfitByDay = Array.from({ length: 30 }, (_, index) => {
+      const dayStart = moment()
+        .subtract(index, "days")
         .startOf("day")
         .valueOf();
-      const last30DaysEnd = moment().endOf("day").valueOf();
+      const dayEnd = moment().subtract(index, "days").endOf("day").valueOf();
 
-      const last30DaysTrades = data.filter((trade) => {
+      const dailyTrades = last30DaysTrades.filter((trade) => {
         const entryTime = parseInt(trade.entry_time);
-        return entryTime >= last30DaysStart && entryTime <= last30DaysEnd;
+        return entryTime >= dayStart && entryTime <= dayEnd;
       });
 
-      const cumulativeProfitByDay = Array.from({ length: 30 }, (_, index) => {
-        const dayStart = moment()
-          .subtract(index, "days")
-          .startOf("day")
-          .valueOf();
-        const dayEnd = moment().subtract(index, "days").endOf("day").valueOf();
+      const dailyCumulativeProfit = dailyTrades.reduce(
+        (acc, trade) =>
+          acc + parseFloat(trade.income) - parseFloat(trade.comission),
+        0
+      );
 
-        const dailyTrades = last30DaysTrades.filter((trade) => {
-          const entryTime = parseInt(trade.entry_time);
-          return entryTime >= dayStart && entryTime <= dayEnd;
-        });
+      return dailyCumulativeProfit;
+    });
 
-        const dailyCumulativeProfit = dailyTrades.reduce(
-          (acc, trade) =>
-            acc + parseFloat(trade.income) - parseFloat(trade.comission),
-          0
-        );
-
-        return dailyCumulativeProfit;
-      });
-
-      return cumulativeProfitByDay.reverse(); // Reverse the array to match the order of categories
-    } else {
-      return [];
-    }
+    return cumulativeProfitByDay.reverse(); // Reverse the array to match the order of categories
   }, [data]);
 
   const categories = useMemo(

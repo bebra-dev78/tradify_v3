@@ -6,6 +6,7 @@ import StarRoundedIcon from "@mui/icons-material/StarRounded";
 import CircularProgress from "@mui/material/CircularProgress";
 import AccordionSummary from "@mui/material/AccordionSummary";
 import SpeedDialAction from "@mui/material/SpeedDialAction";
+import LinearProgress from "@mui/material/LinearProgress";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import SpeedDialIcon from "@mui/material/SpeedDialIcon";
 import MuiPagination from "@mui/material/Pagination";
@@ -48,7 +49,7 @@ import {
   GridToolbarDensitySelector,
 } from "@mui/x-data-grid";
 
-import { useState, useEffect, useRef, useMemo, memo } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback, memo } from "react";
 import useSWRImmutable from "swr/immutable";
 import { useSWRConfig } from "swr";
 import { DateTime } from "luxon";
@@ -56,10 +57,12 @@ import Image from "next/image";
 import crypto from "crypto";
 import axios from "axios";
 
-import FailSnackbar from "#/components/snackbar-fail";
 import { useMode } from "#/components/global/theme-registry";
+import FailSnackbar from "#/components/snackbar-fail";
 import { useKeys, useUser } from "#/app/my/layout";
+import useFormat from "#/utils/format-thousands";
 import Iconify from "#/utils/iconify";
+
 import {
   updateTags,
   deleteTrades,
@@ -70,8 +73,8 @@ import {
 
 import overlay from "#/public/svg/illustration_empty_content.svg";
 
-const LoadingOverlay = memo(function LoadingOverlay() {
-  return (
+const LoadingOverlay = memo(function LoadingOverlay({ loading }) {
+  return loading === false ? (
     <Box
       sx={{
         display: "flex",
@@ -83,6 +86,8 @@ const LoadingOverlay = memo(function LoadingOverlay() {
     >
       <CircularProgress color="info" disableShrink />
     </Box>
+  ) : (
+    <LinearProgress color="secondary" />
   );
 });
 
@@ -211,7 +216,7 @@ const CustomToolbar = memo(function CustomToolbar({
   );
 });
 
-const CustomColumnMenu = memo(function CustomColumnMenu({ hideMenu, colDef }) {
+function CustomColumnMenu({ hideMenu, colDef }) {
   return (
     <GridColumnMenuContainer hideMenu={hideMenu} colDef={colDef}>
       <GridColumnMenuSortItem onClick={hideMenu} colDef={colDef} />
@@ -230,13 +235,13 @@ const CustomColumnMenu = memo(function CustomColumnMenu({ hideMenu, colDef }) {
       <GridColumnMenuManageItem onClick={hideMenu} colDef={colDef} />
     </GridColumnMenuContainer>
   );
-});
+}
 
 const CustomPagination = memo(function CustomPagination(props) {
   return <GridPagination ActionsComponent={Pagination} {...props} />;
 });
 
-const Pagination = memo(function Pagination({ page, onPageChange, className }) {
+function Pagination({ page, onPageChange, className }) {
   const apiRef = useGridApiContext();
   const pageCount = useGridSelector(apiRef, gridPageCountSelector);
 
@@ -251,7 +256,7 @@ const Pagination = memo(function Pagination({ page, onPageChange, className }) {
       }}
     />
   );
-});
+}
 
 const AutoHeightPopover = memo(function AutoHeightPopover() {
   const [anchorEl, setAnchorEl] = useState(null);
@@ -857,7 +862,7 @@ const DealActions = memo(function DealActions({ apiRef, hidden }) {
   );
 });
 
-export default function DataTable({ dataRef, setActivate }) {
+export default function DataTable({ dataRef, activate, setActivate }) {
   const { mutate } = useSWRConfig();
   const apiRef = useGridApiRef();
   const { keys } = useKeys();
@@ -872,365 +877,14 @@ export default function DataTable({ dataRef, setActivate }) {
   const [height, setHeight] = useState(
     JSON.parse(localStorage.getItem("height")) ?? 800
   );
+  const [pageSize, setPageSize] = useState(
+    JSON.parse(localStorage.getItem("pageSize")) ?? 25
+  );
+  const [loading, setLoading] = useState(false);
   const [onLoad, setOnLoad] = useState(false);
   const [hidden, setHidden] = useState(true);
 
   const rowId = useRef(null);
-
-  const columns = useMemo(
-    () => [
-      {
-        field: "symbol",
-        headerName: "Тикер",
-        width: 150,
-        renderCell: ({ value, row }) => (
-          <MenuItem
-            noWrap
-            onClick={() => {
-              setActivate({ status: true });
-              dataRef.current = {
-                exchange: row.exchange,
-                procent: row.procent,
-                start: row.entryTime,
-                deals: row.deals,
-                symbol: value,
-              };
-              window.scrollTo(0, 0);
-              rowId.current = row.id;
-            }}
-            sx={{
-              mt: "auto",
-              mb: "auto",
-              backgroundColor:
-                rowId.current === row.id
-                  ? "rgba(0, 167, 111, 0.16)"
-                  : "transparent",
-              "&:hover": {
-                backgroundColor:
-                  rowId.current === row.id
-                    ? "rgba(0, 167, 111, 0.32)"
-                    : "rgba(255, 255, 255, 0.08)",
-              },
-            }}
-          >
-            {value}
-          </MenuItem>
-        ),
-      },
-      {
-        field: "tags",
-        headerName: "Причины входа",
-        width: 350,
-        renderCell: ({ value, row }) => (
-          <Autocomplete
-            multiple
-            fullWidth
-            noOptionsText="Нет данных"
-            value={value ?? []}
-            options={JSON.parse(localStorage.getItem("tags")) ?? []}
-            onChange={(e, n) => {
-              apiRef.current.updateRows([{ id: row.id, tags: n }]);
-              updateTags(row.id, n);
-            }}
-            renderOption={(props, option, state, ownerState) => (
-              <Box
-                sx={{
-                  borderRadius: "8px",
-                  marginTop: "6px",
-                  [`&.${autocompleteClasses.option}`]: {
-                    padding: "8px",
-                  },
-                }}
-                component="li"
-                {...props}
-              >
-                {ownerState.getOptionLabel(option)}
-              </Box>
-            )}
-            ChipProps={{ variant: "soft", color: "info", size: "medium" }}
-            popupIcon={<Iconify icon="solar:alt-arrow-down-bold-duotone" />}
-            renderInput={(params) => (
-              <TextField {...params} variant="standard" color="secondary" />
-            )}
-          />
-        ),
-      },
-      {
-        field: "rating",
-        headerName: "Оценка",
-        width: 150,
-        renderCell: ({ value, row }) => (
-          <Rating
-            value={value}
-            icon={<StarRoundedIcon color="warning" />}
-            emptyIcon={<StarRoundedIcon color="text.secondary" />}
-            onChange={(e, n) => {
-              apiRef.current.updateRows([{ id: row.id, rating: n }]);
-              updateRating(row.id, n);
-            }}
-          />
-        ),
-      },
-      {
-        field: "entryTime",
-        headerName: "Время входа",
-        width: 140,
-        renderCell: ({ value }) => (
-          <Stack
-            sx={{
-              textAlign: "right",
-            }}
-          >
-            {DateTime.fromMillis(value).toLocaleString({
-              year: "numeric",
-              month: "short",
-              day: "numeric",
-            })}
-            <Typography variant="caption" sx={{ color: "text.secondary" }}>
-              {DateTime.fromMillis(value).toLocaleString({
-                hour: "numeric",
-                minute: "numeric",
-                second: "numeric",
-              })}
-            </Typography>
-          </Stack>
-        ),
-      },
-      {
-        field: "exitTime",
-        headerName: "Время выхода",
-        width: 140,
-        renderCell: ({ value }) => (
-          <Stack
-            sx={{
-              textAlign: "right",
-            }}
-          >
-            {DateTime.fromMillis(value).toLocaleString({
-              year: "numeric",
-              month: "short",
-              day: "numeric",
-            })}
-            <Typography variant="caption" sx={{ color: "text.secondary" }}>
-              {DateTime.fromMillis(value).toLocaleString({
-                hour: "numeric",
-                minute: "numeric",
-                second: "numeric",
-              })}
-            </Typography>
-          </Stack>
-        ),
-      },
-      {
-        field: "side",
-        headerName: "Сторона",
-        description: "Направление сделки",
-        renderCell: ({ value }) =>
-          value === "BUY" ? (
-            <Typography
-              variant="subtitle1"
-              sx={{
-                color: "info.main",
-              }}
-            >
-              LONG
-            </Typography>
-          ) : (
-            <Typography
-              variant="subtitle1"
-              sx={{
-                color: "warning.main",
-              }}
-            >
-              SHORT
-            </Typography>
-          ),
-      },
-      {
-        field: "averageEntryPrice",
-        headerName: "Цена входа",
-        description: "Средняя цена входа",
-        width: 120,
-        renderCell: ({ value, row }) => (
-          <Typography variant="subtitle2">
-            ${row.side === "BUY" ? value : row.averageExitPrice}
-          </Typography>
-        ),
-      },
-      {
-        field: "averageExitPrice",
-        headerName: "Цена выхода",
-        description: "Средняя цена выхода",
-        width: 130,
-        renderCell: ({ value, row }) => (
-          <Typography variant="subtitle2">
-            ${row.side === "BUY" ? value : row.averageEntryPrice}
-          </Typography>
-        ),
-      },
-      {
-        field: "duration",
-        headerName: "Длительность",
-        width: 200,
-        valueFormatter: ({ value }) => {
-          const hours = Math.floor(value / 1000 / 3600);
-          const minutes = Math.floor((value / 1000 / 60) % 60);
-          const seconds = Math.floor((value / 1000) % 60);
-          return `${hours > 0 ? `${hours} час. ` : ""}${
-            minutes > 0 ? `${minutes} мин. ` : ""
-          }${seconds > 0 ? `${seconds} сек. ` : `${value % 1000} мс. `}`.trim();
-        },
-      },
-      {
-        type: "number",
-        field: "procent",
-        headerName: "Процент",
-        renderCell: ({ value }) =>
-          value >= 0 ? (
-            <Box
-              component="span"
-              sx={{
-                p: "0px 6px",
-                width: "54px",
-                height: "24px",
-                lineHeight: "0",
-                cursor: "default",
-                fontWeight: "700",
-                borderRadius: "6px",
-                fontSize: "0.75rem",
-                alignItems: "center",
-                whiteSpace: "nowrap",
-                display: "inline-flex",
-                justifyContent: "center",
-                color: "rgb(119, 237, 139)",
-                textTransform: "capitalize",
-                backgroundColor: "rgba(34, 197, 94, 0.16)",
-                transition: "all 200ms cubic-bezier(0.4, 0, 0.2, 1) 0ms",
-              }}
-            >
-              {value}%
-            </Box>
-          ) : (
-            <Box
-              component="span"
-              sx={{
-                p: "0px 6px",
-                width: "54px",
-                height: "24px",
-                lineHeight: "0",
-                cursor: "default",
-                fontWeight: "700",
-                fontSize: "0.75rem",
-                borderRadius: "6px",
-                alignItems: "center",
-                whiteSpace: "nowrap",
-                display: "inline-flex",
-                justifyContent: "center",
-                color: "rgb(255, 172, 130)",
-                textTransform: "capitalize",
-                backgroundColor: "rgba(255, 86, 48, 0.16)",
-                transition: "all 200ms cubic-bezier(0.4, 0, 0.2, 1) 0ms",
-              }}
-            >
-              {value}%
-            </Box>
-          ),
-      },
-      {
-        type: "number",
-        field: "income",
-        headerName: "Доход",
-        width: 150,
-        valueFormatter: ({ value }) => `${value}$`,
-      },
-      {
-        type: "number",
-        field: "profit",
-        headerName: "Прибыль",
-        width: 150,
-        valueGetter: ({ row }) =>
-          `${(parseFloat(row.income) - parseFloat(row.comission)).toFixed(2)}$`,
-      },
-      {
-        type: "number",
-        field: "turnover",
-        headerName: "Оборот",
-        width: 150,
-        renderCell: ({ value }) => (
-          <Typography variant="subtitle2">{value}</Typography>
-        ),
-      },
-      {
-        type: "number",
-        field: "maxVolume",
-        headerName: "Макс. объём",
-        width: 150,
-        renderCell: ({ value, row }) => (
-          <Typography variant="subtitle2">
-            {value > row.turnover ? row.turnover : value}
-          </Typography>
-        ),
-      },
-      {
-        type: "number",
-        field: "volume",
-        headerName: "Объём ($)",
-        width: 150,
-      },
-      {
-        type: "number",
-        field: "comission",
-        headerName: "Комиссия",
-        width: 150,
-        valueFormatter: ({ value }) => `$${value}`,
-      },
-      {
-        type: "number",
-        field: "apikey",
-        headerName: "API-ключ",
-        width: 150,
-        renderCell: ({ value }) => (
-          <Typography
-            variant="subtitle2"
-            noWrap
-            sx={{ color: "text.disabled" }}
-          >
-            {value}
-          </Typography>
-        ),
-      },
-    ],
-    []
-  );
-
-  const rows = useMemo(() => {
-    if (data) {
-      return data.map((trade) => ({
-        id: trade.id,
-        kid: trade.kid,
-        exchange: trade.exchange,
-        symbol: trade.symbol,
-        tags: trade.tags,
-        rating: trade.rating,
-        entryTime: parseInt(trade.entry_time),
-        exitTime: parseInt(trade.exit_time),
-        side: trade.side,
-        procent: parseFloat(trade.procent),
-        income: trade.income,
-        turnover: parseFloat(trade.turnover),
-        maxVolume: parseFloat(trade.max_volume),
-        volume: parseFloat(trade.volume),
-        comission: trade.comission,
-        averageEntryPrice: trade.avg_entry_price,
-        averageExitPrice: trade.avg_exit_price,
-        duration: parseInt(trade.duration),
-        deals: trade.deals,
-        apikey: keys.find((key) => key.id === trade.kid).title,
-      }));
-    } else {
-      return [];
-    }
-  }, [data]);
 
   useEffect(() => {
     if (data?.length > 0) {
@@ -1253,6 +907,8 @@ export default function DataTable({ dataRef, setActivate }) {
         ) + 500;
 
       const now = Date.now();
+
+      setLoading(true);
 
       if (key1 !== undefined && data.some((trade) => trade.exchange === 1)) {
         requests.push(
@@ -1678,6 +1334,8 @@ export default function DataTable({ dataRef, setActivate }) {
             });
           }
         }
+
+        setLoading(false);
       });
     }
     return () => {
@@ -1685,7 +1343,431 @@ export default function DataTable({ dataRef, setActivate }) {
     };
   }, [onLoad]);
 
-  const dark = mode === "dark";
+  const columns = useMemo(
+    () => [
+      {
+        field: "symbol",
+        headerName: "Тикер",
+        width: 150,
+        renderCell: ({ value, row }) => (
+          <MenuItem
+            noWrap
+            onClick={() => {
+              setActivate({ status: true });
+              dataRef.current = {
+                exchange: row.exchange,
+                procent: row.procent,
+                start: row.entryTime,
+                deals: row.deals,
+                symbol: value,
+              };
+              window.scrollTo(0, 0);
+              rowId.current = row.id;
+            }}
+            sx={{
+              mt: "auto",
+              mb: "auto",
+              backgroundColor:
+                rowId.current === row.id
+                  ? "rgba(0, 167, 111, 0.16)"
+                  : "transparent",
+              "&:hover": {
+                backgroundColor:
+                  rowId.current === row.id
+                    ? "rgba(0, 167, 111, 0.32)"
+                    : "rgba(255, 255, 255, 0.08)",
+              },
+            }}
+          >
+            {value}
+          </MenuItem>
+        ),
+      },
+      {
+        field: "tags",
+        headerName: "Причины входа",
+        width: 350,
+        renderCell: ({ value, row }) => (
+          <Autocomplete
+            multiple
+            fullWidth
+            noOptionsText="Нет данных"
+            value={value ?? []}
+            options={JSON.parse(localStorage.getItem("tags")) ?? []}
+            onChange={(e, n) => {
+              apiRef.current.updateRows([{ id: row.id, tags: n }]);
+              updateTags(row.id, n);
+            }}
+            renderOption={(props, option, state, ownerState) => (
+              <Box
+                sx={{
+                  borderRadius: "8px",
+                  marginTop: "6px",
+                  [`&.${autocompleteClasses.option}`]: {
+                    padding: "8px",
+                  },
+                }}
+                component="li"
+                {...props}
+              >
+                {ownerState.getOptionLabel(option)}
+              </Box>
+            )}
+            ChipProps={{ variant: "soft", color: "info", size: "medium" }}
+            popupIcon={<Iconify icon="solar:alt-arrow-down-bold-duotone" />}
+            renderInput={(params) => (
+              <TextField {...params} variant="standard" color="secondary" />
+            )}
+          />
+        ),
+      },
+      {
+        field: "rating",
+        headerName: "Оценка",
+        width: 150,
+        renderCell: ({ value, row }) => (
+          <Rating
+            value={value}
+            icon={<StarRoundedIcon color="warning" />}
+            emptyIcon={<StarRoundedIcon color="text.secondary" />}
+            onChange={(e, n) => {
+              apiRef.current.updateRows([{ id: row.id, rating: n }]);
+              updateRating(row.id, n);
+            }}
+          />
+        ),
+      },
+      {
+        field: "entryTime",
+        headerName: "Время входа",
+        width: 140,
+        renderCell: ({ value }) => (
+          <Stack
+            sx={{
+              textAlign: "right",
+            }}
+          >
+            {DateTime.fromMillis(value).toLocaleString({
+              year: "numeric",
+              month: "short",
+              day: "numeric",
+            })}
+            <Typography variant="caption" sx={{ color: "text.secondary" }}>
+              {DateTime.fromMillis(value).toLocaleString({
+                hour: "numeric",
+                minute: "numeric",
+                second: "numeric",
+              })}
+            </Typography>
+          </Stack>
+        ),
+      },
+      {
+        field: "exitTime",
+        headerName: "Время выхода",
+        width: 140,
+        renderCell: ({ value }) => (
+          <Stack
+            sx={{
+              textAlign: "right",
+            }}
+          >
+            {DateTime.fromMillis(value).toLocaleString({
+              year: "numeric",
+              month: "short",
+              day: "numeric",
+            })}
+            <Typography variant="caption" sx={{ color: "text.secondary" }}>
+              {DateTime.fromMillis(value).toLocaleString({
+                hour: "numeric",
+                minute: "numeric",
+                second: "numeric",
+              })}
+            </Typography>
+          </Stack>
+        ),
+      },
+      {
+        field: "side",
+        headerName: "Сторона",
+        description: "Направление сделки",
+        renderCell: ({ value }) =>
+          value === "BUY" ? (
+            <Typography
+              variant="subtitle1"
+              sx={{
+                color: "info.main",
+              }}
+            >
+              LONG
+            </Typography>
+          ) : (
+            <Typography
+              variant="subtitle1"
+              sx={{
+                color: "warning.main",
+              }}
+            >
+              SHORT
+            </Typography>
+          ),
+      },
+      {
+        field: "averageEntryPrice",
+        headerName: "Цена входа",
+        description: "Средняя цена входа",
+        width: 120,
+        renderCell: ({ value, row }) => (
+          <Typography variant="subtitle2">
+            ${row.side === "BUY" ? value : row.averageExitPrice}
+          </Typography>
+        ),
+      },
+      {
+        field: "averageExitPrice",
+        headerName: "Цена выхода",
+        description: "Средняя цена выхода",
+        width: 130,
+        renderCell: ({ value, row }) => (
+          <Typography variant="subtitle2">
+            ${row.side === "BUY" ? value : row.averageEntryPrice}
+          </Typography>
+        ),
+      },
+      {
+        field: "duration",
+        headerName: "Длительность",
+        width: 200,
+        valueFormatter: ({ value }) => {
+          const hours = Math.floor(value / 1000 / 3600);
+          const minutes = Math.floor((value / 1000 / 60) % 60);
+          const seconds = Math.floor((value / 1000) % 60);
+          return `${hours > 0 ? `${hours} час. ` : ""}${
+            minutes > 0 ? `${minutes} мин. ` : ""
+          }${seconds > 0 ? `${seconds} сек. ` : `${value % 1000} мс. `}`.trim();
+        },
+      },
+      {
+        type: "number",
+        field: "procent",
+        headerName: "Процент",
+        renderCell: ({ value }) =>
+          value >= 0 ? (
+            <Box
+              component="span"
+              sx={{
+                p: "0px 6px",
+                width: "54px",
+                height: "24px",
+                lineHeight: "0",
+                cursor: "default",
+                fontWeight: "700",
+                borderRadius: "6px",
+                fontSize: "0.75rem",
+                alignItems: "center",
+                whiteSpace: "nowrap",
+                display: "inline-flex",
+                justifyContent: "center",
+                color: "rgb(119, 237, 139)",
+                textTransform: "capitalize",
+                backgroundColor: "rgba(34, 197, 94, 0.16)",
+                transition: "all 200ms cubic-bezier(0.4, 0, 0.2, 1) 0ms",
+              }}
+            >
+              {value}%
+            </Box>
+          ) : (
+            <Box
+              component="span"
+              sx={{
+                p: "0px 6px",
+                width: "54px",
+                height: "24px",
+                lineHeight: "0",
+                cursor: "default",
+                fontWeight: "700",
+                fontSize: "0.75rem",
+                borderRadius: "6px",
+                alignItems: "center",
+                whiteSpace: "nowrap",
+                display: "inline-flex",
+                justifyContent: "center",
+                color: "rgb(255, 172, 130)",
+                textTransform: "capitalize",
+                backgroundColor: "rgba(255, 86, 48, 0.16)",
+                transition: "all 200ms cubic-bezier(0.4, 0, 0.2, 1) 0ms",
+              }}
+            >
+              {value}%
+            </Box>
+          ),
+      },
+      {
+        type: "number",
+        field: "income",
+        headerName: "Доход",
+        width: 150,
+        valueFormatter: ({ value }) => `${value}$`,
+      },
+      {
+        type: "number",
+        field: "profit",
+        headerName: "Прибыль",
+        width: 150,
+        valueGetter: ({ row }) =>
+          `${(parseFloat(row.income) - parseFloat(row.comission)).toFixed(2)}$`,
+      },
+      {
+        type: "number",
+        field: "turnover",
+        headerName: "Оборот",
+        width: 150,
+        renderCell: ({ value }) => (
+          <Typography variant="subtitle2">{useFormat(value)}</Typography>
+        ),
+      },
+      {
+        type: "number",
+        field: "maxVolume",
+        headerName: "Макс. объём",
+        width: 150,
+        renderCell: ({ value, row }) => (
+          <Typography variant="subtitle2">
+            {useFormat(Math.max(row.turnover, value))}
+          </Typography>
+        ),
+      },
+      {
+        type: "number",
+        field: "volume",
+        headerName: "Объём ($)",
+        width: 150,
+        valueFormatter: ({ value }) => useFormat(value),
+      },
+      {
+        type: "number",
+        field: "comission",
+        headerName: "Комиссия",
+        width: 150,
+        valueFormatter: ({ value }) => `$${value}`,
+      },
+      {
+        type: "number",
+        field: "apikey",
+        headerName: "API-ключ",
+        width: 150,
+        renderCell: ({ value }) => (
+          <Typography
+            variant="subtitle2"
+            noWrap
+            sx={{ color: "text.disabled" }}
+          >
+            {value}
+          </Typography>
+        ),
+      },
+    ],
+    [activate, height, autoHeight]
+  );
+
+  const rows = useMemo(() => {
+    if (data) {
+      return data.map((trade) => ({
+        id: trade.id,
+        kid: trade.kid,
+        exchange: trade.exchange,
+        symbol: trade.symbol,
+        tags: trade.tags,
+        rating: trade.rating,
+        entryTime: parseInt(trade.entry_time),
+        exitTime: parseInt(trade.exit_time),
+        side: trade.side,
+        procent: parseFloat(trade.procent),
+        income: trade.income,
+        turnover: parseFloat(trade.turnover),
+        maxVolume: parseFloat(trade.max_volume),
+        volume: parseFloat(trade.volume),
+        comission: trade.comission,
+        averageEntryPrice: trade.avg_entry_price,
+        averageExitPrice: trade.avg_exit_price,
+        duration: parseInt(trade.duration),
+        deals: trade.deals,
+        apikey: keys.find((key) => key.id === trade.kid).title,
+      }));
+    } else {
+      return [];
+    }
+  }, [data]);
+
+  const sx = useMemo(
+    () => ({
+      border: "none",
+      "--DataGrid-overlayHeight": "600px",
+      "&.MuiDataGrid-root--densityCompact .MuiDataGrid-cell": {
+        py: "5px",
+      },
+      "&.MuiDataGrid-root--densityStandard .MuiDataGrid-cell": {
+        py: "10px",
+      },
+      "&.MuiDataGrid-root--densityComfortable .MuiDataGrid-cell": {
+        py: "15px",
+      },
+      "& .MuiDataGrid-columnHeaders": {
+        color: "text.secondary",
+        borderColor: mode === "dark" ? "rgb(46, 50, 54)" : "rgb(241, 243, 244)",
+        backgroundColor:
+          mode === "dark" ? "rgba(145, 158, 171, 0.12)" : "rgb(244, 246, 248)",
+      },
+      "& .MuiDataGrid-withBorderColor": {
+        borderColor:
+          mode === "dark" ? "rgba(145, 158, 171, 0.12)" : "rgb(244, 246, 248)",
+      },
+      "& .MuiDataGrid-columnsContainer, .MuiDataGrid-cell": {
+        borderBottom:
+          mode === "dark"
+            ? "1px dashed rgba(145, 158, 171, 0.24)"
+            : "1px dashed rgba(145, 158, 171, 0.5)",
+      },
+    }),
+    [mode]
+  );
+
+  const slotProps = useMemo(
+    () => ({
+      loadingOverlay: { loading },
+      toolbar: {
+        height,
+        setHeight,
+        autoHeight,
+        setAutoHeight,
+      },
+    }),
+    [loading, height, autoHeight]
+  );
+
+  const initialState = useMemo(
+    () => ({
+      pagination: {
+        paginationModel: {
+          pageSize,
+        },
+      },
+      sorting: {
+        sortModel: [{ field: "entryTime", sort: "desc" }],
+      },
+    }),
+    [pageSize]
+  );
+
+  const onRowSelectionModelChange = useCallback(
+    (n) => setHidden(n.length > 0 ? false : true),
+    []
+  );
+
+  const onPaginationModelChange = useCallback(({ pageSize }) => {
+    setPageSize(pageSize);
+    localStorage.setItem("pageSize", pageSize);
+  }, []);
 
   return (
     <>
@@ -1694,156 +1776,38 @@ export default function DataTable({ dataRef, setActivate }) {
           autoHeight
           checkboxSelection
           disableRowSelectionOnClick
-          getRowHeight={() => "auto"}
-          pageSizeOptions={[10, 25, 50, 100]}
           localeText={ruRU.components.MuiDataGrid.defaultProps.localeText}
-          initialState={{
-            pagination: {
-              paginationModel: {
-                pageSize: JSON.parse(localStorage.getItem("pageSize")) ?? 25,
-              },
-            },
-            sorting: {
-              sortModel: [{ field: "entryTime", sort: "desc" }],
-            },
-          }}
-          onRowSelectionModelChange={(newRowSelectionModel) => {
-            if (newRowSelectionModel.length > 0) {
-              setHidden(false);
-            } else {
-              setHidden(true);
-            }
-          }}
-          onPaginationModelChange={({ pageSize }) => {
-            localStorage.setItem("pageSize", pageSize);
-          }}
-          slotProps={{
-            toolbar: {
-              height,
-              setHeight,
-              autoHeight,
-              setAutoHeight,
-            },
-          }}
-          slots={{
-            loadingOverlay: LoadingOverlay,
-            noRowsOverlay: NoRowsOverlay,
-            columnMenu: CustomColumnMenu,
-            pagination: CustomPagination,
-            toolbar: CustomToolbar,
-          }}
+          onRowSelectionModelChange={onRowSelectionModelChange}
+          onPaginationModelChange={onPaginationModelChange}
+          pageSizeOptions={pageSizeOptions}
+          getRowHeight={getRowHeight}
+          initialState={initialState}
+          slotProps={slotProps}
+          loading={isLoading || loading}
           columns={columns}
-          loading={isLoading}
           apiRef={apiRef}
+          slots={slots}
           rows={rows}
-          sx={{
-            border: "none",
-            "--DataGrid-overlayHeight": "600px",
-            "&.MuiDataGrid-root--densityCompact .MuiDataGrid-cell": {
-              py: "5px",
-            },
-            "&.MuiDataGrid-root--densityStandard .MuiDataGrid-cell": {
-              py: "10px",
-            },
-            "&.MuiDataGrid-root--densityComfortable .MuiDataGrid-cell": {
-              py: "15px",
-            },
-            "& .MuiDataGrid-columnHeaders": {
-              color: "text.secondary",
-              borderColor: dark ? "rgb(46, 50, 54)" : "rgb(241, 243, 244)",
-              backgroundColor: dark
-                ? "rgba(145, 158, 171, 0.12)"
-                : "rgb(244, 246, 248)",
-            },
-            "& .MuiDataGrid-withBorderColor": {
-              borderColor: dark
-                ? "rgba(145, 158, 171, 0.12)"
-                : "rgb(244, 246, 248)",
-            },
-            "& .MuiDataGrid-columnsContainer, .MuiDataGrid-cell": {
-              borderBottom: dark
-                ? "1px dashed rgba(145, 158, 171, 0.24)"
-                : "1px dashed rgba(145, 158, 171, 0.5)",
-            },
-          }}
+          sx={sx}
         />
       ) : (
         <Box sx={{ height }}>
           <DataGrid
             checkboxSelection
             disableRowSelectionOnClick
-            getRowHeight={() => "auto"}
-            pageSizeOptions={[10, 25, 50, 100]}
             localeText={ruRU.components.MuiDataGrid.defaultProps.localeText}
-            initialState={{
-              pagination: {
-                paginationModel: {
-                  pageSize: JSON.parse(localStorage.getItem("pageSize")) ?? 25,
-                },
-              },
-              sorting: {
-                sortModel: [{ field: "entryTime", sort: "desc" }],
-              },
-            }}
-            onRowSelectionModelChange={(newRowSelectionModel) => {
-              if (newRowSelectionModel.length > 0) {
-                setHidden(false);
-              } else {
-                setHidden(true);
-              }
-            }}
-            onPaginationModelChange={({ pageSize }) => {
-              localStorage.setItem("pageSize", pageSize);
-            }}
-            slotProps={{
-              toolbar: {
-                height,
-                setHeight,
-                autoHeight,
-                setAutoHeight,
-              },
-            }}
-            slots={{
-              loadingOverlay: LoadingOverlay,
-              noRowsOverlay: NoRowsOverlay,
-              columnMenu: CustomColumnMenu,
-              pagination: CustomPagination,
-              toolbar: CustomToolbar,
-            }}
+            onRowSelectionModelChange={onRowSelectionModelChange}
+            onPaginationModelChange={onPaginationModelChange}
+            pageSizeOptions={pageSizeOptions}
+            getRowHeight={getRowHeight}
+            initialState={initialState}
+            slotProps={slotProps}
+            loading={isLoading || loading}
             columns={columns}
-            loading={isLoading}
             apiRef={apiRef}
+            slots={slots}
             rows={rows}
-            sx={{
-              border: "none",
-              "--DataGrid-overlayHeight": "600px",
-              "&.MuiDataGrid-root--densityCompact .MuiDataGrid-cell": {
-                py: "5px",
-              },
-              "&.MuiDataGrid-root--densityStandard .MuiDataGrid-cell": {
-                py: "10px",
-              },
-              "&.MuiDataGrid-root--densityComfortable .MuiDataGrid-cell": {
-                py: "15px",
-              },
-              "& .MuiDataGrid-columnHeaders": {
-                color: "text.secondary",
-                borderColor: dark ? "rgb(46, 50, 54)" : "rgb(241, 243, 244)",
-                backgroundColor: dark
-                  ? "rgba(145, 158, 171, 0.12)"
-                  : "rgb(244, 246, 248)",
-              },
-              "& .MuiDataGrid-withBorderColor": {
-                borderColor: dark
-                  ? "rgba(145, 158, 171, 0.12)"
-                  : "rgb(244, 246, 248)",
-              },
-              "& .MuiDataGrid-columnsContainer, .MuiDataGrid-cell": {
-                borderBottom: dark
-                  ? "1px dashed rgba(145, 158, 171, 0.24)"
-                  : "1px dashed rgba(145, 158, 171, 0.5)",
-              },
-            }}
+            sx={sx}
           />
         </Box>
       )}
@@ -1851,3 +1815,15 @@ export default function DataTable({ dataRef, setActivate }) {
     </>
   );
 }
+
+const getRowHeight = () => "auto";
+
+const slots = {
+  loadingOverlay: LoadingOverlay,
+  noRowsOverlay: NoRowsOverlay,
+  columnMenu: CustomColumnMenu,
+  pagination: CustomPagination,
+  toolbar: CustomToolbar,
+};
+
+const pageSizeOptions = [10, 25, 50, 100];

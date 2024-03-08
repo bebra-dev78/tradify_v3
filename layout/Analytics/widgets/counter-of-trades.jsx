@@ -39,148 +39,144 @@ export default function СurrentOfTrades({
   });
 
   const [series, categories] = useMemo(() => {
-    if (data) {
-      let current = {};
-      let bebra = [];
+    let current = {};
+    let bebra = [];
 
-      switch (timeRangeStatus) {
-        case "current-day":
-          data.forEach((trade) => {
-            var symbol = trade.symbol;
-            if (!current[symbol]) {
-              current[symbol] = Array(24).fill(0);
-            }
+    switch (timeRangeStatus) {
+      case "current-day":
+        data.forEach((trade) => {
+          var symbol = trade.symbol;
+          if (!current[symbol]) {
+            current[symbol] = Array(24).fill(0);
+          }
 
-            var entryHour = moment(parseInt(trade.entry_time)).hour();
-            current[symbol][entryHour] += 1;
-          });
+          var entryHour = moment(parseInt(trade.entry_time)).hour();
+          current[symbol][entryHour] += 1;
+        });
 
-          return [
-            Object.entries(current).map(([symbol, counts]) => ({
+        return [
+          Object.entries(current).map(([symbol, counts]) => ({
+            name: symbol,
+            data: counts,
+          })),
+          Array(24)
+            .fill()
+            .map((_, index) =>
+              DateTime.now()
+                .startOf("day")
+                .plus({ hours: index })
+                .toFormat("HH:mm")
+            ),
+        ];
+
+      case "current-week":
+        data.forEach((trade) => {
+          var symbol = trade.symbol;
+          if (!current[symbol]) {
+            current[symbol] = Array(7).fill(0);
+          }
+
+          var entryDay = moment(parseInt(trade.entry_time)).day();
+          var luxonDayIndex = (entryDay + 6) % 7;
+          current[symbol][luxonDayIndex] += 1;
+        });
+
+        return [
+          Object.entries(current).map(([symbol, counts]) => ({
+            name: symbol,
+            data: counts,
+          })),
+          Array(7)
+            .fill()
+            .map((_, index) =>
+              DateTime.now()
+                .startOf("week")
+                .plus({ days: index })
+                .toFormat("dd.MM")
+            ),
+        ];
+
+      case "current-month":
+        bebra = Array(DateTime.now().daysInMonth).fill(0);
+
+        data.forEach((trade) => {
+          var entryDay = moment(parseInt(trade.entry_time)).date();
+          bebra[entryDay - 1] += 1;
+        });
+
+        return [
+          [
+            {
+              name: "сделки",
+              data: bebra,
+            },
+          ],
+          Array(DateTime.now().daysInMonth)
+            .fill()
+            .map((_, index) =>
+              DateTime.now()
+                .startOf("month")
+                .plus({ days: index })
+                .toFormat("dd")
+            ),
+        ];
+
+      case "last-7":
+        bebra = Array.from({ length: 7 }, (_, i) =>
+          moment().subtract(i, "days").format("YYYY-MM-DD")
+        );
+
+        data.forEach((trade) => {
+          if (!current[trade.symbol]) {
+            current[trade.symbol] = {};
+            bebra.forEach((day) => (current[trade.symbol][day] = 0));
+          }
+          current[trade.symbol][
+            moment(parseInt(trade.entry_time)).format("YYYY-MM-DD")
+          ]++;
+        });
+
+        return [
+          Object.keys(current)
+            .map((symbol) => ({
               name: symbol,
-              data: counts,
-            })),
-            Array(24)
-              .fill()
-              .map((_, index) =>
-                DateTime.now()
-                  .startOf("day")
-                  .plus({ hours: index })
-                  .toFormat("HH:mm")
-              ),
-          ];
+              data: bebra.map((day) => current[symbol][day]).reverse(),
+            }))
+            .filter((item) => item.data.some((value) => value !== 0)),
+          Array(7)
+            .fill()
+            .map((_, index) =>
+              DateTime.now()
+                .minus({ days: 6 - index })
+                .toFormat("dd.MM")
+            ),
+        ];
 
-        case "current-week":
-          data.forEach((trade) => {
-            var symbol = trade.symbol;
-            if (!current[symbol]) {
-              current[symbol] = Array(7).fill(0);
-            }
+      case "last-30":
+        bebra = Array.from({ length: 30 }, (_, i) =>
+          DateTime.now().minus({ days: i }).toFormat("dd.MM")
+        ).reverse();
 
-            var entryDay = moment(parseInt(trade.entry_time)).day();
-            var luxonDayIndex = (entryDay + 6) % 7;
-            current[symbol][luxonDayIndex] += 1;
-          });
+        data.forEach((trade) => {
+          var entryDay = moment(parseInt(trade.entry_time)).format("DD.MM");
+          if (!current[entryDay]) {
+            current[entryDay] = 0;
+          }
+          current[entryDay]++;
+        });
 
-          return [
-            Object.entries(current).map(([symbol, counts]) => ({
-              name: symbol,
-              data: counts,
-            })),
-            Array(7)
-              .fill()
-              .map((_, index) =>
-                DateTime.now()
-                  .startOf("week")
-                  .plus({ days: index })
-                  .toFormat("dd.MM")
-              ),
-          ];
+        return [
+          [
+            {
+              name: "сделки",
+              data: bebra.map((day) => current[day] || 0),
+            },
+          ],
+          bebra,
+        ];
 
-        case "current-month":
-          bebra = Array(DateTime.now().daysInMonth).fill(0);
-
-          data.forEach((trade) => {
-            var entryDay = moment(parseInt(trade.entry_time)).date();
-            bebra[entryDay - 1] += 1;
-          });
-
-          return [
-            [
-              {
-                name: "сделки",
-                data: bebra,
-              },
-            ],
-            Array(DateTime.now().daysInMonth)
-              .fill()
-              .map((_, index) =>
-                DateTime.now()
-                  .startOf("month")
-                  .plus({ days: index })
-                  .toFormat("dd")
-              ),
-          ];
-
-        case "last-7":
-          bebra = Array.from({ length: 7 }, (_, i) =>
-            moment().subtract(i, "days").format("YYYY-MM-DD")
-          );
-
-          data.forEach((trade) => {
-            if (!current[trade.symbol]) {
-              current[trade.symbol] = {};
-              bebra.forEach((day) => (current[trade.symbol][day] = 0));
-            }
-            current[trade.symbol][
-              moment(parseInt(trade.entry_time)).format("YYYY-MM-DD")
-            ]++;
-          });
-
-          return [
-            Object.keys(current)
-              .map((symbol) => ({
-                name: symbol,
-                data: bebra.map((day) => current[symbol][day]).reverse(),
-              }))
-              .filter((item) => item.data.some((value) => value !== 0)),
-            Array(7)
-              .fill()
-              .map((_, index) =>
-                DateTime.now()
-                  .minus({ days: 6 - index })
-                  .toFormat("dd.MM")
-              ),
-          ];
-
-        case "last-30":
-          bebra = Array.from({ length: 30 }, (_, i) =>
-            DateTime.now().minus({ days: i }).toFormat("dd.MM")
-          ).reverse();
-
-          data.forEach((trade) => {
-            var entryDay = moment(parseInt(trade.entry_time)).format("DD.MM");
-            if (!current[entryDay]) {
-              current[entryDay] = 0;
-            }
-            current[entryDay]++;
-          });
-
-          return [
-            [
-              {
-                name: "сделки",
-                data: bebra.map((day) => current[day] || 0),
-              },
-            ],
-            bebra,
-          ];
-
-        default:
-          return [[], []];
-      }
-    } else {
-      return [[], []];
+      default:
+        return [[], []];
     }
   }, [data]);
 

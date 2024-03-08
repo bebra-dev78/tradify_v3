@@ -21,16 +21,12 @@ export default function DistributionByCoin({
   handleDeleteWidget,
 }) {
   const counter = useMemo(() => {
-    if (data) {
-      const u = {};
-      data.forEach((trade) => {
-        u[trade.symbol] = u[trade.symbol] ? u[trade.symbol] + 1 : 1;
-      });
+    var u = {};
+    data.forEach((trade) => {
+      u[trade.symbol] = u[trade.symbol] ? u[trade.symbol] + 1 : 1;
+    });
 
-      return Object.fromEntries(Object.entries(u).sort((a, b) => b[1] - a[1]));
-    } else {
-      return {};
-    }
+    return Object.fromEntries(Object.entries(u).sort((a, b) => b[1] - a[1]));
   }, [data]);
 
   return isLoading ? (

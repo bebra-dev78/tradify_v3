@@ -449,7 +449,7 @@ export default function WidgetsLayout({
     }
   }, [data, timeRangeStatus, timeRange]);
 
-  console.log(`current (${timeRangeStatus}): `, current);
+  console.log(`${timeRangeStatus}: `, current);
 
   const handleDeleteWidget = useCallback(
     (ID) => {

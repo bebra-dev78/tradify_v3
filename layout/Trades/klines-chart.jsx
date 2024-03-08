@@ -30,7 +30,6 @@ import { useState, useEffect, useRef, memo } from "react";
 import axios from "axios";
 
 import Annotations from "#/layout/Trades/tools/annotations";
-import { useMode } from "#/components/global/theme-registry";
 import Figures from "#/layout/Trades/tools/figures";
 import Lineup from "#/layout/Trades/tools/lineup";
 import Lines from "#/layout/Trades/tools/lines";

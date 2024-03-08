@@ -19,7 +19,11 @@ export default function Index() {
         setActivate={setActivate}
       />
       <DataTableCardWrapper>
-        <DataTable dataRef={dataRef} setActivate={setActivate} />
+        <DataTable
+          dataRef={dataRef}
+          activate={activate}
+          setActivate={setActivate}
+        />
       </DataTableCardWrapper>
     </>
   );

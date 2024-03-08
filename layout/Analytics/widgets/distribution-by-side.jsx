@@ -20,22 +20,18 @@ export default function DistributionBySide({
   const theme = useTheme();
 
   const counter = useMemo(() => {
-    if (data) {
-      let l = 0;
-      let s = 0;
+    let l = 0;
+    let s = 0;
 
-      data.forEach((trade) => {
-        if (trade.side === "BUY") {
-          l++;
-        } else {
-          s++;
-        }
-      });
+    data.forEach((trade) => {
+      if (trade.side === "BUY") {
+        l++;
+      } else {
+        s++;
+      }
+    });
 
-      return [l, s];
-    } else {
-      return [0, 0];
-    }
+    return [l, s];
   }, [data]);
 
   return isLoading ? (

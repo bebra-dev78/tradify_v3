@@ -22,9 +22,7 @@ export default function Form() {
 
   useEffect(() => {
     fetch("/api/bebra")
-      .then((r) => {
-        r.json();
-      })
+      .then((r) => r.json())
       .then((data) => {
         if (data) {
           NProgress.start();
